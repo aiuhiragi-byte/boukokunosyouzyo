@@ -405,7 +405,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
 (function (root) {
   'use strict';
 
-  // 4つの恐怖（＝投資先の4分野）
+  // 4つの恐怖
   const SECTORS = ['war', 'plague', 'life', 'power'];
   const SECT_JP = { war: '戦', plague: '疫', life: '飢', power: '罰' };
   const SECT_DESC = {
@@ -415,26 +415,26 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     power: '罰への怯え。魔女狩りや粛清で高まる'
   };
 
-  // 使い魔の種族（実在の金融商品がモチーフ）
+  // 使い魔の種族と異名
   // basic: 最初から選べる4種（4つの恐怖に1対1）。それ以外は第5夜から悪魔が持ってくる。
   const SPECIES = {
-    crow:   { name: '鴉',       motif: '景気敏感株', basic: true, fee: 2, sens: { war: 1, life: .1 },
+    crow:   { name: '鴉',       motif: '戦場の影', basic: true, fee: 2, sens: { war: 1, life: .1 },
               desc: '戦の恐怖を喰う。遠征期に大きく育ち、和平で痩せる。' },
-    rat:    { name: '鼠',       motif: '新興・小型株', basic: true, fee: 1, sens: { plague: 1.6, life: .1 }, exoWeak: 1.4,
+    rat:    { name: '鼠',       motif: '疫を運ぶもの', basic: true, fee: 1, sens: { plague: 1.6, life: .1 }, exoWeak: 1.4,
               desc: '疫病の恐怖を喰う。当たれば化けるが振れが激しく、騎士団にも弱い。' },
-    locust: { name: '蝗',       motif: '生活必需品株', basic: true, fee: 1, sens: { life: .5, plague: .1 }, exoResist: .5,
+    locust: { name: '蝗',       motif: '飢えの群れ', basic: true, fee: 1, sens: { life: .5, plague: .1 }, exoResist: .5,
               desc: '飢えの恐怖を喰う。振れが小さく、騎士団の被害も半分。' },
-    shadow: { name: '影法師',    motif: '防衛・警備株', basic: true, fee: 2, sens: { power: .5 }, inverse: true, decay: .02,
+    shadow: { name: '影法師',    motif: '狩人を喰う影', basic: true, fee: 2, sens: { power: .5 }, inverse: true, decay: .02,
               desc: '罰への怯えを喰う。騎士団が動くほど太り、他の使い魔と逆に動く。毎夜2%痩せる。' },
-    moth:   { name: '蛾',       motif: 'インデックス投信', fee: 1, sens: { war: .35, plague: .35, life: .35, power: .35 },
+    moth:   { name: '蛾',       motif: '四つの恐怖を渡る羽', fee: 1, sens: { war: .35, plague: .35, life: .35, power: .35 },
               desc: '群れで4つの恐怖すべてを薄く広く喰う。大きく外れない。' },
-    bee:    { name: '蜂',       motif: '高配当株', fee: 2, sens: { life: .3, war: .1 }, yield: .03,
+    bee:    { name: '蜂',       motif: '魂を運ぶ羽音', fee: 2, sens: { life: .3, war: .1 }, yield: .03,
               desc: '毎夜、蓄えの3%を欠片にして運んでくる。本体は育ちにくい。' },
-    snake:  { name: '蛇',       motif: '債券', fee: 1, bond: { turns: 6, rate: .15 },
+    snake:  { name: '蛇',       motif: '六夜の眠り', fee: 1, bond: { turns: 6, rate: .15 },
               desc: '札の影響を受けず地下で眠る。6夜後に蓄え×1.15で目覚める。途中で起こすと2割減。' },
-    gold:   { name: '金色の蜥蜴', motif: '金（ゴールド）', fee: 2, sens: { war: .25, plague: .3, power: .35, life: -.3 }, exoResist: 1,
-              desc: '戦・疫・罰で帝国が荒れると値を上げる。飢えの時期は民が金を手放すので沈む。騎士団に狩られない。' },
-    wolf:   { name: '双頭の狼',  motif: 'レバレッジETF', fee: 2, sens: { war: 2, life: .2 }, decay: .03,
+    gold:   { name: '金色の蜥蜴', motif: '災いに光る鱗', fee: 2, sens: { war: .25, plague: .3, power: .35, life: -.3 }, exoResist: 1,
+              desc: '戦・疫・罰への恐怖を喰って育つ。飢えが広がると蓄えが減る。騎士団に狩られない。' },
+    wolf:   { name: '双頭の狼',  motif: '戦禍に飢える双牙', fee: 2, sens: { war: 2, life: .2 }, decay: .03,
               desc: '鴉の2倍の振れ幅。毎夜3%痩せる。短期決戦向け。' }
   };
   const SPECIES_KEYS = Object.keys(SPECIES);
@@ -465,7 +465,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     patrolLife:   { name: '騎士団の巡回（飢）', exo: { target: 'life', e: -.55 } },
     patrolPower:  { name: '騎士団の巡回（罰）', exo: { target: 'power', e: -.55 } },
     inquisition:  { name: '異端審問',           exo: { target: 'all', e: -.22 } },
-    // 繁栄期：民の恐怖が消える（使い魔にとっての恐慌）。宴の夜は宮廷の警護が緩む。
+    // 繁栄期：民の恐怖が消える。宴の夜は宮廷の警護が緩む。
     founding:   { name: '建国祭',         fx: { war: -.12, plague: -.12, life: -.12, power: -.12 }, lax: true },
     feast:      { name: '戦勝の祝宴',     fx: { war: -.25, life: -.1 }, lax: true },
     amnesty:    { name: '皇帝の恩赦',     fx: { power: -.35 } },
@@ -518,7 +518,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     slots: 3,
     eggs: 3,
     recoverFee: .05,
-    lossCut: 0, // 0 = ロスカットなし
+    lossCut: 0, // 0 = 衰弱による消滅なし
     scoutCost: 2,
     minFeed: 1,
     boom: 2,
@@ -650,7 +650,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     const get = Math.floor(amount * (1 - fee) * 10) / 10;
     const all = amount >= f.value - 0.05;
     const share = amount / f.value;
-    const realized = (amount * (1 - fee)) - f.invested * share; // 確定損益
+    const realized = (amount * (1 - fee)) - f.invested * share; // 回収した魂と注いだ魂の差
     return { get, fee, all, realized: r1(realized) };
   }
 
@@ -666,7 +666,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     if (pv.all) {
       s.fams = s.fams.filter(x => x !== f);
       if (pv.realized < 0) s.stats.cutEarly++;
-      s.log.push({ t: s.turn, kind: pv.realized < 0 ? 'bad' : 'good', text: `${SPECIES[f.sp].name}を喰らった。欠片${pv.get}を回収（確定${pv.realized >= 0 ? '+' : ''}${pv.realized}）` });
+      s.log.push({ t: s.turn, kind: pv.realized < 0 ? 'bad' : 'good', text: `${SPECIES[f.sp].name}を喰らった。欠片${pv.get}を回収（注いだ分との差${pv.realized >= 0 ? '+' : ''}${pv.realized}）` });
     } else {
       f.value = r1(f.value - amount); f.invested = r1(f.invested * (1 - share));
       s.log.push({ t: s.turn, kind: 'act', text: `${SPECIES[f.sp].name}から欠片${pv.get}を吸い上げた` });
@@ -696,7 +696,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     if (pv.all) {
       s.fams = s.fams.filter(x => x !== f);
       if (pv.realized < 0) s.stats.cutEarly++;
-      s.log.push({ t: s.turn, kind: pv.realized < 0 ? 'bad' : 'good', text: `${SPECIES[f.sp].name}を喰らった。欠片${pv.get}を回収（確定${pv.realized >= 0 ? '+' : ''}${pv.realized}）` });
+      s.log.push({ t: s.turn, kind: pv.realized < 0 ? 'bad' : 'good', text: `${SPECIES[f.sp].name}を喰らった。欠片${pv.get}を回収（注いだ分との差${pv.realized >= 0 ? '+' : ''}${pv.realized}）` });
     } else {
       const share = pv.cost / f.value;
       f.value = pv.left; f.invested = r1(f.invested * (1 - share));
@@ -713,7 +713,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     if (s.debt + add > P.debtCap) return err(`悪魔はこれ以上貸さない（借りの上限は${P.debtCap}）`);
     s.shards += amount; s.debt += add; s.stats.borrowed += amount;
     s.deathTurn -= P.borrowShorten;
-    s.log.push({ t: s.turn, kind: 'bad', text: `命を担保に、悪魔から欠片${amount}を借りた（悪魔への借り+${add}）` });
+    s.log.push({ t: s.turn, kind: 'bad', text: `命を削って、悪魔から欠片${amount}を借りた（悪魔への借り+${add}）` });
     return { ok: true };
   }
 
@@ -884,7 +884,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
   }
   function affinity(spKey) {
     const sp = E.SPECIES[spKey];
-    if (sp.bond) return '<span style="color:var(--muted)">札の影響なし・満期で返る</span>';
+    if (sp.bond) return '<span style="color:var(--muted)">札の影響なし・六夜後に目覚める</span>';
     const parts = E.SECTORS.filter(k => sp.sens && Math.abs(sp.sens[k] || 0) >= .1).sort((a, b) => Math.abs(sp.sens[b]) - Math.abs(sp.sens[a]))
       .map(k => { const v = sp.sens[k]; const lvl = Math.abs(v) >= 1.5 ? '◎◎' : Math.abs(v) >= .8 ? '◎' : Math.abs(v) >= .3 ? '○' : '△'; return `<span class="s-${k} ${v < 0 ? 'neg' : ''}">${E.SECT_JP[k]}${v < 0 ? '逆' : lvl}</span>`; });
     if (sp.inverse) parts.push('<span class="dn">騎で太る</span>');
@@ -1016,7 +1016,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
       <div class="stat"><div class="k">帝国の標的</div><div class="v num">${S.ruined}<span style="font-size:.7rem;color:var(--muted)"> / ${E.TARGETS.length}</span></div></div>`;
     const hp = E.SYMPTOMS.length - sym.lv;
     let marginTxt = '';
-    if (S.stats.borrowed > 0) marginTxt = `<span class="margin-warn num">維持率 ${Math.round(E.netWorth(S) / Math.max(1, S.debt) * 100)}%（${E.P.marginLine * 100}%割れで敗北）</span>`;
+    if (S.stats.borrowed > 0) marginTxt = `<span class="margin-warn num">魂の総量／悪魔への借り ${Math.round(E.netWorth(S) / Math.max(1, S.debt) * 100)}%（${E.P.marginLine * 100}%割れで敗北）</span>`;
     $('health').innerHTML = `<span class="pips ${hp <= 2 ? 'low' : ''}" aria-label="体力 ${hp}/5">${[0, 1, 2, 3, 4].map(i => `<i class="${i < hp ? 'on' : ''}"></i>`).join('')}</span><span>王女の体調：${sym.text}</span>${marginTxt}`;
 
     const _anim = animateNew; setTimeout(() => { animateNew = false; }, 0);
@@ -1029,7 +1029,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
       const prev = f.history.length > 1 ? f.history[f.history.length - 2] : null, dv = prev == null ? null : f.value - prev;
       const danger = f.value < f.invested * .55;
       return `<button class="famrow ${danger ? 'danger' : ''}" data-fam="${f.id}">
-        <div class="fam-identity">${art(f.sp, 'mini')}<div><div class="nm">${spName(f.sp)}</div><div class="meta num">損益<span class="${pl >= 0 ? 'up' : 'dn'}">${pl >= 0 ? '+' : '−'}${fmt(Math.abs(pl))}</span></div></div></div>
+        <div class="fam-identity">${art(f.sp, 'mini')}<div><div class="nm">${spName(f.sp)}</div><div class="meta num">増減<span class="${pl >= 0 ? 'up' : 'dn'}">${pl >= 0 ? '+' : '−'}${fmt(Math.abs(pl))}</span></div></div></div>
         <div class="aff famaff">${affinity(f.sp)}</div>
         <div class="val num"><b>${fmt(f.value)}</b>${dv == null ? '<span class="sub">孵化</span>' : `<span class="${dv >= 0 ? 'up' : 'dn'}">昨夜${dv >= 0 ? '+' : '−'}${fmt(Math.abs(dv))}</span>`}</div>
         <div class="famside"><div class="outlook">${outlook(f)}</div></div></button>`;
@@ -1074,10 +1074,10 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
       <span class="sub">${i < S.ruined ? '破滅' : ''}</span></div>`).join('')}</div>
       <p class="sub">一夜に一人まで。破滅させるたび次の代価は8%上がる。騎士団が動いた夜や宴の夜は宮廷が手薄になり代価が下がる。</p>`],
     ledger: () => ['悪魔の帳簿', `<div class="rules"><p>悪魔への借り <b class="num">${S.debt}</b>・次の新月の取り立て <b class="num">${E.nextPayment(S)}</b>（あと${E.nightsToMoon(S)}夜）</p>
-      <ul><li>新月ごとに利息${E.P.moonInterest * 100}%が付き、借りの${E.P.payRate * 100}%を取り立てられる</li>
+      <ul><li>新月ごとに悪魔への借りが${E.P.moonInterest * 100}%増え、その後、借りの${E.P.payRate * 100}%を取り立てられる</li>
       <li>払えなければ不足分の半分が借りに上乗せされ、王女の命が2夜縮む</li>
       <li>借りると借りた額の${E.P.borrowRate}倍が借りに加わり、命が${E.P.borrowShorten}夜縮む。一度でも借りると、魂の総量が借りの${E.P.marginLine * 100}%を割った時点で敗北</li></ul></div>
-      <button class="btn danger" id="borrowBtn">命を担保に借りる</button>`],
+      <button class="btn danger" id="borrowBtn">命を削って借りる</button>`],
     log: () => ['記録', `<div class="log">${S.log.slice().reverse().map(l => `<div class="${l.kind}"><b class="num">${l.t}夜</b>${esc(l.text)}</div>`).join('')}</div>`],
     rules: () => ['ルールブック', rulesHTML()]
   };
@@ -1092,14 +1092,14 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
       <li>夜を越すと、帝国の気配の5つのうちどれかがランダムに起き、使い魔の蓄えが増減する。引かれた札の代わりに山札から1枚補充される。</li>
       <li>王女の命は20〜28夜目のどこかで尽きる（非公開）。体力の丸と容体が目安。それまでに5人の標的をすべて破滅させれば勝ち（その時点で勝利）。</li></ul>
       <h3>情勢（非公開）と山札</h3>
-      <p>帝国には「重税・遠征・疫病・粛清・繁栄」の情勢があり、今の情勢の山札から補充される。情勢は毎夜${E.STAY * 100}%で続き、変わる時は残り4つに等分で移る。繁栄は帝国が幸福な時期で、民の恐怖が消えるので使い魔はみな痩せる（使い魔にとっての恐慌）。最初は重税。場の札は情勢が変わる前に入ったものも残る。</p>
+      <p>帝国には「重税・遠征・疫病・粛清・繁栄」の情勢があり、今の情勢の山札から補充される。情勢は毎夜${E.STAY * 100}%で続き、変わる時は残り4つに等分で移る。繁栄は帝国が幸福な時期で、民の恐怖が消えるので使い魔はみな痩せる。最初は重税。場の札は情勢が変わる前に入ったものも残る。</p>
       <div class="tbl"><table><thead><tr><th>札</th>${rg.map(r => `<th>${E.REGIMES[r].name}</th>`).join('')}<th style="text-align:left">効果（序盤）</th></tr></thead><tbody>${deckRows}</tbody></table></div>
       <p>札の効果は夜が進むほど大きくなる（序盤×1.0 → 25夜目×約2.0）。新しい札が公開で入る確率は序盤80%から終盤15%まで下がる。</p>
       <h3>使い魔の種族</h3>
       <p>蓄えの変化 = 札の各恐怖の値 × 種族の感応度 の合計。騎士団の札は、その恐怖を喰う種族に感応度（最大1）に応じて当たる。基本の4種はいつでも孵せる。蛾から下の5種は第5夜から、悪魔が毎夜1つだけ持ってくる。</p>
-      <div class="tbl"><table><thead><tr><th>種族</th><th style="text-align:left">モチーフ</th>${E.SECTORS.map(x => `<th class="s-${x}">${E.SECT_JP[x]}</th>`).join('')}<th>代価</th><th style="text-align:left">特徴</th></tr></thead><tbody>${sens}</tbody></table></div>
-      <h3>お金まわり</h3>
-      <ul><li>回収（売却）は一部でも全部でも可能。受け取りは5%目減りする。全部回収するとその使い魔は消え、枠が空く。使い魔は3体まで。</li>
+      <div class="tbl"><table><thead><tr><th>種族</th><th style="text-align:left">異名</th>${E.SECTORS.map(x => `<th class="s-${x}">${E.SECT_JP[x]}</th>`).join('')}<th>代価</th><th style="text-align:left">特徴</th></tr></thead><tbody>${sens}</tbody></table></div>
+      <h3>魂の欠片と代価</h3>
+      <ul><li>回収は一部でも全部でも可能。受け取りは5%目減りする。全部回収するとその使い魔は消え、枠が空く。使い魔は3体まで。</li>
       <li>破滅の代価は毎夜およそ3%ずつ上がる（±5%のぶれ）。騎士団の札や、宴の札（建国祭・戦勝の祝宴）が起きた夜は2割下がる。</li>
       <li>偵察：欠片${E.P.scoutCost}で伏せ札を1枚表にできる。</li></ul></div>`;
   }
@@ -1114,7 +1114,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     // 手元の枠の色：取り立て額に届けば緑、減るなら赤、届かず増えるだけなら白
     const handCls = (to) => to >= pay ? 'meet' : to < S.shards ? 'lose' : 'plain';
     const R = `手元の<br>魂の欠片<div class="lbl2">次の取立 ${pay}</div>`, L = `${esc(sp.name)}の<br>魂の欠片`;
-    sheet({ title: `${spName(f.sp)} <span class="tag">${esc(sp.motif)}</span> <span class="sub num" style="font-family:var(--f-body)">蓄え ${fmt(f.value)}・損益 <span class="${pl >= 0 ? 'up' : 'dn'}">${pl >= 0 ? '+' : '−'}${fmt(Math.abs(pl))}</span></span>`,
+    sheet({ title: `${spName(f.sp)} <span class="tag">${esc(sp.motif)}</span> <span class="sub num" style="font-family:var(--f-body)">蓄え ${fmt(f.value)}・注いだ魂との差 <span class="${pl >= 0 ? 'up' : 'dn'}">${pl >= 0 ? '+' : '−'}${fmt(Math.abs(pl))}</span></span>`,
       body: `${art(f.sp)}<p class="sub" style="margin:0">${cdesc(sp.desc)}</p><div class="sub">気配の1〜5が起きた場合（%）</div>${minis(f, true)}`,
       min: -mx, max: canFeed, value: 0, unit: '移動する数',
       quick: [['全回収', () => -mx], ['半回収', () => -Math.floor(mx / 2)], ['0', () => 0], ['全て注ぐ', m => m]],
@@ -1128,9 +1128,9 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
         const loss = p.realized < 0;
         return xferHTML({ lLbl: R, lCur: S.shards, lTo: S.shards + p.get, lCls: handCls(S.shards + p.get), rLbl: L, rCur: f.value, rTo: p.left, dir: 'left', amt: p.get, color: 'var(--gain)',
           note: `${esc(sp.name)}は<br>${fmt(p.cost)}減る<br>（目減り${Math.round(p.fee * 100)}%）`,
-          extra: `${p.all ? `<div class="note">${esc(sp.name)}は消え、枠が空く</div>` : ''}<div class="note">確定する損益 <span class="${loss ? 'dn' : 'up'}" style="font-weight:700">${p.realized >= 0 ? '+' : '−'}${fmt(Math.abs(p.realized))}</span>${loss ? '　<span class="dn">この損は、二度と取り戻せない。</span>' : ''}</div>` });
+          extra: `${p.all ? `<div class="note">${esc(sp.name)}は消え、枠が空く</div>` : ''}<div class="note">回収分の増減（注いだ魂との差） <span class="${loss ? 'dn' : 'up'}" style="font-weight:700">${p.realized >= 0 ? '+' : '−'}${fmt(Math.abs(p.realized))}</span>${loss ? '　<span class="dn">失った魂は、二度と取り戻せない。</span>' : ''}</div>` });
       },
-      preview: v => v < 0 ? (sp.bond ? '蛇は満期前に起こすと2割減る' : '') : v > 0 ? '注いだ分だけ、育つ時も痩せる時も振れ幅が大きくなる' : (sp.bond ? '眠っている蛇には注ぎ込めない。回収はできる' : ''),
+      preview: v => v < 0 ? (sp.bond ? '蛇は目覚める前に起こすと2割減る' : '') : v > 0 ? '注いだ分だけ、育つ時も痩せる時も振れ幅が大きくなる' : (sp.bond ? '眠っている蛇には注ぎ込めない。回収はできる' : ''),
       run: v => v > 0 ? E.feed(S, id, v) : E.withdraw(S, id, -v) });
   }
   function spark(hist, invested) {
@@ -1200,7 +1200,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
       run: v => E.hatch(S, i, v - sp.fee) });
   }
   function openBorrow() {
-    sheet({ title: '命を担保に借りる', body: `<p class="sub" style="margin:0">借りた額の${E.P.borrowRate}倍が借りに加わり、王女の命が${E.P.borrowShorten}夜縮む。借りの上限は${E.P.debtCap}。</p>`,
+    sheet({ title: '命を削って借りる', body: `<p class="sub" style="margin:0">借りた額の${E.P.borrowRate}倍が借りに加わり、王女の命が${E.P.borrowShorten}夜縮む。借りの上限は${E.P.debtCap}。</p>`,
       min: 1, max: Math.max(1, Math.floor((E.P.debtCap - S.debt) / E.P.borrowRate)), value: 5, ok: '借りる', unit: '借りる',
       big: v => bigNum('悪魔への借り', S.debt, `<b class="dn">${S.debt + Math.ceil(v * E.P.borrowRate)}</b>`, `手元の魂の欠片 ${fmt(S.shards)} → ${fmt(S.shards + v)}`),
       run: v => E.borrow(S, v) });
@@ -1270,12 +1270,12 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     const verdict = { win: '皇帝まで、ひとり残らず。王女は静かに目を閉じた。', perfect: '皇帝まで、ひとり残らず。', lose: `破滅させたのは${S.ruined}人。${E.TARGETS[S.ruined] ? esc(E.TARGETS[S.ruined].name) + 'は生き延びた。' : ''}`, margin: '借りた欠片に見合う蓄えが尽き、悪魔は契約を打ち切った。' }[res];
     const lines = [`破滅させた標的：<b>${S.ruined} / ${E.TARGETS.length}人</b>`];
     const held = S.fams.filter(f => f.value < f.invested);
-    if (held.length) lines.push(`<span class="hl">含み損のまま最後まで抱えた使い魔：${held.map(f => `${esc(E.SPECIES[f.sp].name)}（注ぎ込み${fmt(f.invested)}→${fmt(f.value)}）`).join('、')}</span>`);
+    if (held.length) lines.push(`<span class="hl">注いだ魂を取り戻せず、最後まで残した使い魔：${held.map(f => `${esc(E.SPECIES[f.sp].name)}（注ぎ込み${fmt(f.invested)}→${fmt(f.value)}）`).join('、')}</span>`);
     const missed = S.fams.filter(f => f.peak > f.value + .5);
-    if (missed.length) lines.push(`最高値で回収していれば：${missed.map(f => `${esc(E.SPECIES[f.sp].name)} あと${fmt(f.peak - f.value)}`).join('、')}`);
-    lines.push(`自ら損を確定させて喰らった回数：${st.cutEarly}回`);
+    if (missed.length) lines.push(`最も蓄えていた夜に回収していれば：${missed.map(f => `${esc(E.SPECIES[f.sp].name)} あと${fmt(f.peak - f.value)}`).join('、')}`);
+    lines.push(`注いだ魂を取り戻せぬまま喰らった回数：${st.cutEarly}回`);
     lines.push(`代価と目減りで悪魔に渡った欠片：${fmt(st.fees)}`);
-    if (st.borrowed) lines.push(`命を担保に借りた欠片：${st.borrowed}`);
+    if (st.borrowed) lines.push(`命を削って借りた欠片：${st.borrowed}`);
     if (st.latePays) lines.push(`<span class="hl">取り立てを払えなかった新月：${st.latePays}回（そのたび命が2夜縮んだ）</span>`);
     lines.push(`使われずに残った欠片と使い魔：${fmt(st.leftover)}`);
     const strip = S.regimeHistory.slice(0, S.turn - 1).map((r, i) => `<span class="rg-${r}" title="${i + 1}夜 ${E.REGIMES[r].name}">${E.REGIMES[r].name[0]}</span>`).join('');

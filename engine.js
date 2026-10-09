@@ -2,7 +2,7 @@
 (function (root) {
   'use strict';
 
-  // 4つの恐怖（＝投資先の4分野）
+  // 4つの恐怖
   const SECTORS = ['war', 'plague', 'life', 'power'];
   const SECT_JP = { war: '戦', plague: '疫', life: '飢', power: '罰' };
   const SECT_DESC = {
@@ -12,26 +12,26 @@
     power: '罰への怯え。魔女狩りや粛清で高まる'
   };
 
-  // 使い魔の種族（実在の金融商品がモチーフ）
+  // 使い魔の種族と異名
   // basic: 最初から選べる4種（4つの恐怖に1対1）。それ以外は第5夜から悪魔が持ってくる。
   const SPECIES = {
-    crow:   { name: '鴉',       motif: '景気敏感株', basic: true, fee: 2, sens: { war: 1, life: .1 },
+    crow:   { name: '鴉',       motif: '戦場の影', basic: true, fee: 2, sens: { war: 1, life: .1 },
               desc: '戦の恐怖を喰う。遠征期に大きく育ち、和平で痩せる。' },
-    rat:    { name: '鼠',       motif: '新興・小型株', basic: true, fee: 1, sens: { plague: 1.6, life: .1 }, exoWeak: 1.4,
+    rat:    { name: '鼠',       motif: '疫を運ぶもの', basic: true, fee: 1, sens: { plague: 1.6, life: .1 }, exoWeak: 1.4,
               desc: '疫病の恐怖を喰う。当たれば化けるが振れが激しく、騎士団にも弱い。' },
-    locust: { name: '蝗',       motif: '生活必需品株', basic: true, fee: 1, sens: { life: .5, plague: .1 }, exoResist: .5,
+    locust: { name: '蝗',       motif: '飢えの群れ', basic: true, fee: 1, sens: { life: .5, plague: .1 }, exoResist: .5,
               desc: '飢えの恐怖を喰う。振れが小さく、騎士団の被害も半分。' },
-    shadow: { name: '影法師',    motif: '防衛・警備株', basic: true, fee: 2, sens: { power: .5 }, inverse: true, decay: .02,
+    shadow: { name: '影法師',    motif: '狩人を喰う影', basic: true, fee: 2, sens: { power: .5 }, inverse: true, decay: .02,
               desc: '罰への怯えを喰う。騎士団が動くほど太り、他の使い魔と逆に動く。毎夜2%痩せる。' },
-    moth:   { name: '蛾',       motif: 'インデックス投信', fee: 1, sens: { war: .35, plague: .35, life: .35, power: .35 },
+    moth:   { name: '蛾',       motif: '四つの恐怖を渡る羽', fee: 1, sens: { war: .35, plague: .35, life: .35, power: .35 },
               desc: '群れで4つの恐怖すべてを薄く広く喰う。大きく外れない。' },
-    bee:    { name: '蜂',       motif: '高配当株', fee: 2, sens: { life: .3, war: .1 }, yield: .03,
+    bee:    { name: '蜂',       motif: '魂を運ぶ羽音', fee: 2, sens: { life: .3, war: .1 }, yield: .03,
               desc: '毎夜、蓄えの3%を欠片にして運んでくる。本体は育ちにくい。' },
-    snake:  { name: '蛇',       motif: '債券', fee: 1, bond: { turns: 6, rate: .15 },
+    snake:  { name: '蛇',       motif: '六夜の眠り', fee: 1, bond: { turns: 6, rate: .15 },
               desc: '札の影響を受けず地下で眠る。6夜後に蓄え×1.15で目覚める。途中で起こすと2割減。' },
-    gold:   { name: '金色の蜥蜴', motif: '金（ゴールド）', fee: 2, sens: { war: .25, plague: .3, power: .35, life: -.3 }, exoResist: 1,
-              desc: '戦・疫・罰で帝国が荒れると値を上げる。飢えの時期は民が金を手放すので沈む。騎士団に狩られない。' },
-    wolf:   { name: '双頭の狼',  motif: 'レバレッジETF', fee: 2, sens: { war: 2, life: .2 }, decay: .03,
+    gold:   { name: '金色の蜥蜴', motif: '災いに光る鱗', fee: 2, sens: { war: .25, plague: .3, power: .35, life: -.3 }, exoResist: 1,
+              desc: '戦・疫・罰への恐怖を喰って育つ。飢えが広がると蓄えが減る。騎士団に狩られない。' },
+    wolf:   { name: '双頭の狼',  motif: '戦禍に飢える双牙', fee: 2, sens: { war: 2, life: .2 }, decay: .03,
               desc: '鴉の2倍の振れ幅。毎夜3%痩せる。短期決戦向け。' }
   };
   const SPECIES_KEYS = Object.keys(SPECIES);
@@ -62,7 +62,7 @@
     patrolLife:   { name: '騎士団の巡回（飢）', exo: { target: 'life', e: -.55 } },
     patrolPower:  { name: '騎士団の巡回（罰）', exo: { target: 'power', e: -.55 } },
     inquisition:  { name: '異端審問',           exo: { target: 'all', e: -.22 } },
-    // 繁栄期：民の恐怖が消える（使い魔にとっての恐慌）。宴の夜は宮廷の警護が緩む。
+    // 繁栄期：民の恐怖が消える。宴の夜は宮廷の警護が緩む。
     founding:   { name: '建国祭',         fx: { war: -.12, plague: -.12, life: -.12, power: -.12 }, lax: true },
     feast:      { name: '戦勝の祝宴',     fx: { war: -.25, life: -.1 }, lax: true },
     amnesty:    { name: '皇帝の恩赦',     fx: { power: -.35 } },
@@ -115,7 +115,7 @@
     slots: 3,
     eggs: 3,
     recoverFee: .05,
-    lossCut: 0, // 0 = ロスカットなし
+    lossCut: 0, // 0 = 衰弱による消滅なし
     scoutCost: 2,
     minFeed: 1,
     boom: 2,
@@ -247,7 +247,7 @@
     const get = Math.floor(amount * (1 - fee) * 10) / 10;
     const all = amount >= f.value - 0.05;
     const share = amount / f.value;
-    const realized = (amount * (1 - fee)) - f.invested * share; // 確定損益
+    const realized = (amount * (1 - fee)) - f.invested * share; // 回収した魂と注いだ魂の差
     return { get, fee, all, realized: r1(realized) };
   }
 
@@ -263,7 +263,7 @@
     if (pv.all) {
       s.fams = s.fams.filter(x => x !== f);
       if (pv.realized < 0) s.stats.cutEarly++;
-      s.log.push({ t: s.turn, kind: pv.realized < 0 ? 'bad' : 'good', text: `${SPECIES[f.sp].name}を喰らった。欠片${pv.get}を回収（確定${pv.realized >= 0 ? '+' : ''}${pv.realized}）` });
+      s.log.push({ t: s.turn, kind: pv.realized < 0 ? 'bad' : 'good', text: `${SPECIES[f.sp].name}を喰らった。欠片${pv.get}を回収（注いだ分との差${pv.realized >= 0 ? '+' : ''}${pv.realized}）` });
     } else {
       f.value = r1(f.value - amount); f.invested = r1(f.invested * (1 - share));
       s.log.push({ t: s.turn, kind: 'act', text: `${SPECIES[f.sp].name}から欠片${pv.get}を吸い上げた` });
@@ -293,7 +293,7 @@
     if (pv.all) {
       s.fams = s.fams.filter(x => x !== f);
       if (pv.realized < 0) s.stats.cutEarly++;
-      s.log.push({ t: s.turn, kind: pv.realized < 0 ? 'bad' : 'good', text: `${SPECIES[f.sp].name}を喰らった。欠片${pv.get}を回収（確定${pv.realized >= 0 ? '+' : ''}${pv.realized}）` });
+      s.log.push({ t: s.turn, kind: pv.realized < 0 ? 'bad' : 'good', text: `${SPECIES[f.sp].name}を喰らった。欠片${pv.get}を回収（注いだ分との差${pv.realized >= 0 ? '+' : ''}${pv.realized}）` });
     } else {
       const share = pv.cost / f.value;
       f.value = pv.left; f.invested = r1(f.invested * (1 - share));
@@ -310,7 +310,7 @@
     if (s.debt + add > P.debtCap) return err(`悪魔はこれ以上貸さない（借りの上限は${P.debtCap}）`);
     s.shards += amount; s.debt += add; s.stats.borrowed += amount;
     s.deathTurn -= P.borrowShorten;
-    s.log.push({ t: s.turn, kind: 'bad', text: `命を担保に、悪魔から欠片${amount}を借りた（悪魔への借り+${add}）` });
+    s.log.push({ t: s.turn, kind: 'bad', text: `命を削って、悪魔から欠片${amount}を借りた（悪魔への借り+${add}）` });
     return { ok: true };
   }
 
