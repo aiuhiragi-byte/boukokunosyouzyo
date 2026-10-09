@@ -331,9 +331,14 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
 .egg { position:relative; padding-right:54px; min-height:66px; justify-content:center; }
 .egg .top-l { flex-wrap:wrap; }
 .egg .art-mini { position:absolute; right:5px; top:50%; transform:translateY(-50%); width:46px; height:46px; }
-.egg .art-mini > rect { fill:transparent; }
-.famrow { padding:9px 7px; }
-.famrow .art-mini { width:58px; height:44px; margin-bottom:4px; }
+.famrow { padding:5px 7px; grid-template-columns:minmax(0, 1.6fr) minmax(0, .65fr) auto minmax(0, 1fr); }
+.famrow .famaff { display:grid; grid-template-columns:repeat(2, max-content); gap:1px 3px !important; font-size:.6rem; }
+.fam-identity { display:flex; align-items:center; gap:5px; min-width:0; }
+.fam-identity > div { min-width:0; }
+.famrow .art-mini { width:36px; height:36px; }
+.famrow .nm { overflow-wrap:anywhere; }
+.famrow .famside .outlook { font-size:.78rem; }
+.famrow .famside .outlook b { font-size:.85rem; }
 .sheet-desc .art-scene { height:120px; margin-bottom:10px; }
 @media (max-width:360px) { .egg { padding-right:43px; } .egg .art-mini { width:36px; height:40px; } }
 @media (max-height:650px) { .art-scene { height:120px; } .night-card { gap:8px; padding:12px; } }
@@ -843,7 +848,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
   const ART_LIGHTS = {"grain": "M102 43h4v13h-4Z", "tax": "M139 95h16v17l-8-4-8 4Z", "sleepless": "M111 33a15 15 0 1 1-19-19 14 14 0 0 0 19 19Z", "omen": "M120 67l4 10 10 3-10 4-4 10-4-10-10-4 10-3Z", "rumor": "M106 88l16-4-6 9Z", "rumorGood": "M106 88l16-4-6 9Z", "harvest": "M142 52a10 10 0 1 0 20 0 10 10 0 1 0-20 0Z", "march": "M125 34h25l-9 10 9 10h-25Z", "conscript": "M100 61h39v4h-39Z", "letter": "M113 84h14v14h-14Z", "letterGood": "M118 81h14v14h-14Z", "letterBad": "M113 84h14v14h-14Z", "peace": "M149 57l13-17 4 4-12 16Z", "plague": "M111 76h7v4h-7Zm16 0h7v4h-7Z", "quarantine": "M77 87l86 34v7L77 94Z", "healer": "M151 45h19v16h-19Z", "edict": "M119 99l7-19 5 19-5 14Z", "inquisition": "M144 69h10v20h-10Z", "founding": "M119 30h25l-8 6 8 6h-25Z", "feast": "M101 57h38v5h-38Z", "amnesty": "M116 48h8v14h-8Z", "clinic": "M116 70h8v12h12v8h-12v12h-8V90h-12v-8h12Z", "bounty": "M101 42h4v12h-4Z", "crow": "M107 60h5v4h-5Z", "rat": "M139 88h5v4h-5Z", "locust": "M153 97h5v4h-5Z", "shadow": "M107 72h8v3h-8Zm18 0h8v3h-8Z", "moth": "M116 80h8v23h-8Z", "bee": "M113 91h5v24h-5Z", "snake": "M116 51h5v4h-5Z", "gold": "M153 87h5v4h-5Z", "wolf": "M102 79h5v3h-5Zm39-4h5v3h-5Z", "patrolWar": "M103 64h34v4h-34Z", "patrolPlague": "M113 62h14v9h-14Z", "patrolLife": "M108 62h4v8h-4Zm20 0h4v8h-4Z", "patrolPower": "M118 56h4v20h-4Z"};
   function art(key, size = 'scene') {
     if (!ART_SHAPES[key]) return '';
-    return `<svg class="silhouette art-${size}" viewBox="0 0 240 160" aria-hidden="true" focusable="false" data-art="${key}"><rect width="240" height="160" fill="#211f29"/><path d="${ART_SHAPES[key]}" fill="#69666b"/><path d="${ART_LIGHTS[key]}" fill="#c5ab70"/></svg>`;
+    return `<svg class="silhouette art-${size}" viewBox="0 0 240 160" aria-hidden="true" focusable="false" data-art="${key}">${size === 'mini' ? '' : '<rect width="240" height="160" fill="#211f29"/>'}<path d="${ART_SHAPES[key]}" fill="#69666b"/><path d="${ART_LIGHTS[key]}" fill="#c5ab70"/></svg>`;
   }
 
   let S = E.newGame();
@@ -1020,7 +1025,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
       const prev = f.history.length > 1 ? f.history[f.history.length - 2] : null, dv = prev == null ? null : f.value - prev;
       const danger = f.value < f.invested * .55;
       return `<button class="famrow ${danger ? 'danger' : ''}" data-fam="${f.id}">
-        <div style="min-width:0">${art(f.sp, 'mini')}<div class="nm">${spName(f.sp)}</div><div class="meta num">損益<span class="${pl >= 0 ? 'up' : 'dn'}">${pl >= 0 ? '+' : '−'}${fmt(Math.abs(pl))}</span></div></div>
+        <div class="fam-identity">${art(f.sp, 'mini')}<div><div class="nm">${spName(f.sp)}</div><div class="meta num">損益<span class="${pl >= 0 ? 'up' : 'dn'}">${pl >= 0 ? '+' : '−'}${fmt(Math.abs(pl))}</span></div></div></div>
         <div class="aff famaff">${affinity(f.sp)}</div>
         <div class="val num"><b>${fmt(f.value)}</b>${dv == null ? '<span class="sub">孵化</span>' : `<span class="${dv >= 0 ? 'up' : 'dn'}">昨夜${dv >= 0 ? '+' : '−'}${fmt(Math.abs(dv))}</span>`}</div>
         <div class="famside"><div class="outlook">${outlook(f)}</div></div></button>`;
