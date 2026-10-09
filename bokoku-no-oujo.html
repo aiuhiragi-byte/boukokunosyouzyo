@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>亡国の王女</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+[hidden]{display:none!important}
+body{margin:0}
+/* Layout: one compact phone screen — status strip, omen matrix, familiar rows, egg buttons, revenge line, toolbar; details open in sheets. Single dark look by choice. */
+:root {
+  --ink: #120e16;
+  --panel: #1b1620;
+  --panel2: #241d2a;
+  --line: #3a3042;
+  --text: #ece4d6;
+  --muted: #a39aa8;
+  --brass: #cfa95f;
+  --brass-dim: #8a713f;
+  --gain: #7fc2a0;
+  --loss: #e0646f;
+  --hidden: #8e9fc6;
+  --feed: var(--gain);
+  --s-war: #f08a4b;
+  --s-plague: #a6c449;
+  --s-life: #ead06a;
+  --s-power: #b293ee;
+  --f-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { background: var(--ink); color: var(--text); }
+body { font-family: var(--f-body); font-size: 14px; line-height: 1.5; padding-inline: 12px; padding-block: 8px 84px; }
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; margin: 0; text-wrap: balance; }
+h2 { font-size: .95rem; letter-spacing: .08em; color: var(--brass); display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin-bottom: 5px; }
+h2 small { font-family: var(--f-body); font-size: .68rem; color: var(--muted); letter-spacing: 0; font-weight: 400; flex: 1 1 12em; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+.btn { border: 1px solid var(--line); background: var(--panel2); border-radius: 8px; padding: 10px 14px; font-size: .92rem; min-height: 44px; }
+.btn.primary.feed-fill { background: var(--feed); border-color: var(--feed); color: #0b1a12; }
+.btn.primary.danger-fill { background: var(--loss); border-color: var(--loss); color: #1a0a0c; }
+.sheet-actions { display: grid !important; grid-template-columns: 1fr 2fr; gap: 8px; }
+.sheet-actions .btn { padding: 14px; font-size: 1rem; font-weight: 700; }
+.btn:hover:not(:disabled) { border-color: var(--brass-dim); }
+.btn.primary { background: var(--brass); color: #1a1208; border-color: var(--brass); font-weight: 700; }
+.btn.danger { border-color: #6b3238; color: var(--loss); }
+.sub { font-size: .72rem; color: var(--muted); }
+.up { color: var(--gain); } .dn { color: var(--loss); }
+.s-war { color: var(--s-war); } .s-plague { color: var(--s-plague); } .s-life { color: var(--s-life); } .s-power { color: var(--s-power); }
+
+/* status */
+.top { display: flex; flex-direction: column; gap: 4px; }
+.title-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.title-row h1 { font-size: 1.15rem; font-weight: 800; letter-spacing: .12em; }
+.night { font-family: var(--f-display); color: var(--muted); font-size: .9rem; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.stat { border-top: 1px solid var(--line); padding-top: 2px; min-width: 0; }
+.stat .k { font-size: .62rem; color: var(--muted); }
+.stat .v { font-size: 1.05rem; font-weight: 700; line-height: 1.2; }
+.stat .s { font-size: .62rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.health { font-family: var(--f-display); font-size: .82rem; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pips { display: inline-flex; gap: 3px; }
+.pips i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--brass-dim); display: block; }
+.pips i.on { background: var(--brass); border-color: var(--brass); }
+.pips.low i.on { background: var(--loss); border-color: var(--loss); }
+.margin-warn { color: var(--loss); font-size: .72rem; font-family: var(--f-body); }
+
+/* omen matrix */
+.omtable { overflow-x: clip; display: flex; flex-direction: column; gap: 3px; }
+.om-row { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(0, 1fr)); gap: 3px; will-change: auto; }
+.om-h { font-family: var(--f-display); font-weight: 800; text-align: center; font-size: .95rem; line-height: 1.1; padding-bottom: 2px; border-bottom: 2px solid currentColor; }
+.om-h small { display: block; font-family: var(--f-body); font-weight: 400; font-size: .58rem; opacity: .85; }
+.om-name { background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 3px 6px; display: flex; flex-direction: column; justify-content: center; min-width: 0; position: relative; }
+.om-name .nm { font-family: var(--f-display); font-weight: 700; font-size: .78rem; line-height: 1.2; display: flex; gap: 4px; align-items: baseline; }
+.om-name .ix { color: var(--muted); font-family: var(--f-body); font-size: .64rem; }
+.om-name small { font-size: .58rem; color: var(--muted); line-height: 1.2; }
+.om-name.exo { border-color: #6a2d35; }
+.om-name.hid, .om-hid { background: repeating-linear-gradient(135deg, #1a1830 0 6px, #16142a 6px 12px); border: 1px solid #34385a; color: var(--hidden); }
+.om-hid { grid-column: span 4; border-radius: 5px; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 3px 6px; font-size: .7rem; }
+.om-hid .btn { padding: 2px 10px; font-size: .74rem; min-height: 28px; }
+/* 行の帯：マスはすべて同じ色、行の後ろの背景だけ交互に変える */
+.omtable { gap: 9px; }
+.om-row { border-radius: 6px; }
+.om-row.enter { animation: omenIn .6s cubic-bezier(.2,.8,.2,1) both; }
+.om-row.enter { animation: omenIn .6s cubic-bezier(.2,.8,.2,1) both, omenGlow 2.4s ease-out .3s; }
+.om-row.leave { animation: omenOut .75s cubic-bezier(.5,0,.8,.4) forwards; }
+.om-row.leave { box-shadow: 0 0 0 2px var(--brass), 0 0 16px var(--brass); }
+@keyframes omenOut { 0% { transform: none; opacity: 1; } 30% { transform: translateX(-6px); opacity: 1; } 100% { transform: translateX(110%); opacity: 0; } }
+@keyframes omenIn { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes omenGlow { 0% { box-shadow: 0 0 0 2px var(--brass), 0 0 18px var(--brass); } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .om-row.enter, .om-row.enter .om-name, .om-row.leave { animation: none; } }
+.om-corner { font-family: var(--f-display); font-size: .8rem; color: var(--brass); display: flex; align-items: flex-end; justify-content: flex-end; gap: 4px; padding: 0 2px 6px 0; white-space: nowrap; }
+.om-corner::after { content: '▶'; font-size: .6rem; color: var(--brass-dim); margin-bottom: 2px; }
+.new { position: absolute; top: -5px; right: 3px; font-size: .55rem; background: var(--brass); color: #1a1208; padding: 0 4px; border-radius: 3px; line-height: 1.4; }
+.cell { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; min-height: 34px; display: flex; flex-direction: column; overflow: hidden; }
+
+.cell .half { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; }
+.cell .half + .half { border-top: 1px dashed var(--line); }
+.cell .zero { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--line); }
+.cell .b { position: absolute; top: 16%; bottom: 16%; border-radius: 2px; }
+.cell .b.pos { background: color-mix(in srgb, var(--gain) 45%, transparent); }
+.cell .b.neg { background: color-mix(in srgb, var(--loss) 50%, transparent); }
+.cell .v { position: relative; font-size: .68rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cell .v.pos { color: var(--gain); } .cell .v.neg { color: var(--loss); }
+.cell .v.k::before { content: '騎'; font-weight: 400; font-size: .56rem; margin-right: 1px; color: var(--loss); }
+.omen-note { font-size: .66rem; color: var(--muted); margin-top: 3px; }
+
+/* familiars: one row each */
+.famlist { display: flex; flex-direction: column; gap: 4px; }
+.famrow { display: grid; grid-template-columns: minmax(3.2em, auto) minmax(0, 1fr) auto minmax(5.6em, auto); gap: 6px; align-items: center; width: 100%; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 5px 7px; }
+.famrow:hover { border-color: var(--brass-dim); }
+.famrow.empty { display: block; width: 100%; cursor: pointer; border-style: dashed; color: var(--muted); font-size: .76rem; text-align: center; padding: 8px; cursor: default; }
+.famrow.danger { border-color: #7a3039; }
+.famrow .nm { font-family: var(--f-display); font-weight: 800; font-size: .98rem; line-height: 1.15; }
+.famrow .meta { font-size: .6rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.famrow .val { text-align: right; line-height: 1.15; }
+.famaff { justify-content: center; flex-direction: column; align-items: center; gap: 0 !important; font-size: .7rem; }
+.famside { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; min-width: 0; }
+.famside .outlook { font-size: .95rem; white-space: nowrap; }
+.famside .outlook b { font-size: 1.05rem; }
+.famside .outlook b.unst { color: var(--text); }
+.famside .outlook b.unst small { font-size: .62rem; color: var(--brass); font-weight: 500; margin-right: 2px; }
+.moonbox { display: flex; gap: 4px; padding: 3px 0 2px; }
+.moonbox i { width: 15px; height: 15px; border: 1.5px solid var(--muted); border-radius: 3px; display: grid; place-items: center; font-style: normal; font-size: .7rem; line-height: 1; color: var(--brass); }
+.moonbox i.done { border-color: var(--brass-dim); background: color-mix(in srgb, var(--brass) 15%, transparent); }
+.moonbox i.moon { border: 2px solid var(--loss); box-shadow: 0 0 6px color-mix(in srgb, var(--loss) 50%, transparent); }
+.moonbox i.moon path { stroke: var(--loss); }
+.moonbox.big i { width: 22px; height: 22px; } .moonbox.big svg { width: 16px; height: 16px; } .moonbox.big { justify-content: center; }
+.moonbox svg { width: 11px; height: 11px; display: block; }
+.moonbox path { fill: none; stroke: var(--brass); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 14; stroke-dashoffset: 0; }
+.moonbox path.fresh { animation: drawCheck .6s ease-out .4s both; }
+@keyframes drawCheck { from { stroke-dashoffset: 14; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .moonbox path.fresh { animation: none; } }
+
+.famrow .val b { font-size: 1rem; display: block; }
+.famrow .val span { font-size: .66rem; font-weight: 700; }
+.minis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+.minis .cell { min-height: 26px; }
+.minis .cell .v { font-size: .6rem; }
+.ixl { position: absolute; top: 0; left: 2px; font-size: .5rem; color: var(--muted); z-index: 1; }
+
+/* eggs */
+.eggs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+@media (min-width: 560px) { .eggs { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.egg { display: flex; flex-direction: column; gap: 2px; text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 5px 7px; min-width: 0; }
+.egg:hover:not(:disabled) { border-color: var(--brass-dim); }
+.egg.rare { border-color: var(--brass-dim); background: linear-gradient(160deg, color-mix(in srgb, var(--brass) 10%, var(--panel)), var(--panel)); }
+.egg .top-l { display: flex; justify-content: space-between; align-items: baseline; gap: 4px; }
+.egg .nm { font-family: var(--f-display); font-weight: 800; font-size: .95rem; }
+.egg .fee { font-size: .6rem; color: var(--muted); white-space: nowrap; }
+.aff { display: flex; flex-wrap: wrap; gap: 2px 5px; font-size: .64rem; font-weight: 700; }
+.aff .neg { text-decoration: line-through; opacity: .8; }
+
+/* revenge + toolbar */
+.ruinline .btn { min-height: 48px; padding: 10px 16px; }
+.ruinline { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+.ruinline .who { font-family: var(--f-display); font-weight: 800; font-size: .9rem; line-height: 1.2; }
+.ruinline .price { font-size: 1.05rem; font-weight: 700; text-align: right; line-height: 1.1; }
+.tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.tools .btn { padding: 8px 2px; font-size: .8rem; }
+
+/* sheet contents */
+.targets { display: grid; }
+.target { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.target .ix { font-family: var(--f-display); color: var(--muted); }
+.target .who { font-family: var(--f-display); font-weight: 700; }
+.target .why { font-size: .7rem; color: var(--muted); }
+.target.done .who { text-decoration: line-through; text-decoration-color: var(--loss); color: var(--muted); }
+.target.goal { border-bottom: 2px solid var(--brass-dim); }
+.log { display: flex; flex-direction: column; gap: 3px; font-size: .8rem; }
+.log div { color: var(--muted); }
+.log .bad { color: var(--loss); } .log .good { color: var(--gain); } .log .ruin { color: var(--brass); font-family: var(--f-display); } .log .moon { color: var(--text); }
+.log b { font-weight: 400; color: var(--brass-dim); margin-right: 6px; }
+.rules h3 { font-size: .92rem; margin-top: 12px; color: var(--brass); }
+.rules p, .rules li { font-size: .82rem; }
+.rules ul, .rules ol { padding-left: 1.2em; margin: 6px 0; }
+.legend { display: grid; gap: 3px; font-size: .8rem; }
+.legend b { font-family: var(--f-display); margin-right: 5px; }
+.tbl { overflow-x: auto; }
+.tbl table { border-collapse: collapse; font-size: .74rem; width: 100%; min-width: 460px; }
+.tbl th, .tbl td { border-bottom: 1px solid var(--line); padding: 4px 6px; text-align: right; font-variant-numeric: tabular-nums; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; }
+.tbl th { font-weight: 500; }
+.chip { font-size: .7rem; padding: 0 5px; border-radius: 3px; background: var(--panel2); white-space: nowrap; }
+.fam-big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.fam-big b { font-size: 1.7rem; }
+.spark { width: 100%; height: 44px; display: block; }
+.bar { position: relative; height: 8px; border-radius: 4px; background: var(--panel2); overflow: hidden; }
+.bar .fill { position: absolute; inset: 0 auto 0 0; background: var(--gain); }
+.bar .fill.dn { background: var(--loss); }
+.bar .cut { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--loss); }
+.bar .base { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--muted); }
+.tag { font-size: .66rem; color: var(--brass); border: 1px solid var(--brass-dim); border-radius: 3px; padding: 0 5px; white-space: nowrap; font-family: var(--f-body); font-weight: 400; }
+
+.sticky-top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--ink); margin-inline: -12px; padding: 6px 12px 8px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid var(--line); box-shadow: 0 6px 12px -6px rgba(0,0,0,.7); }
+body { padding-block-start: 0; }
+.flavor { font-family: var(--f-display); font-size: .9rem; line-height: 1.7; color: var(--text); text-align: center; opacity: .9; }
+.stat.warn { border-top: 2px solid var(--loss); background: color-mix(in srgb, var(--loss) 12%, transparent); border-radius: 0 0 4px 4px; padding-inline: 4px; }
+.stat.warn .v, .stat.warn .k, .stat.warn .s { color: var(--loss); }
+.stat.okpay { border-top: 2px solid var(--gain); background: color-mix(in srgb, var(--gain) 12%, transparent); border-radius: 0 0 4px 4px; padding-inline: 4px; }
+.stat.okpay .v, .stat.okpay .k, .stat.okpay .s { color: var(--gain); }
+.stat.alarm { background: color-mix(in srgb, var(--loss) 26%, transparent); animation: alarm 1.2s ease-in-out infinite; }
+@keyframes alarm { 50% { background: color-mix(in srgb, var(--loss) 8%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .stat.okpay { border-top: 2px solid var(--gain); background: color-mix(in srgb, var(--gain) 12%, transparent); border-radius: 0 0 4px 4px; padding-inline: 4px; }
+.stat.okpay .v, .stat.okpay .k, .stat.okpay .s { color: var(--gain); }
+.stat.alarm { animation: none; } }
+.dock .btn.moon { background: var(--loss); border-color: var(--loss); color: #1a0a0c; letter-spacing: .04em; font-size: .92rem; }
+/* last night */
+.lastnight { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; font-size: .78rem; display: flex; flex-direction: column; gap: 2px; }
+.lastnight .card { font-family: var(--f-display); font-weight: 700; }
+.lastnight .chg { display: flex; flex-wrap: wrap; gap: 2px 12px; font-variant-numeric: tabular-nums; }
+.eff { font-weight: 700; margin-left: 4px; }
+[data-omen] { cursor: pointer; }
+/* transfer: familiar ⇄ hand */
+.xfer { display: grid; grid-template-columns: minmax(0, .9fr) minmax(72px, .8fr) minmax(0, 1.25fr); gap: 6px; align-items: center; padding: 6px 0 10px; border-bottom: 1px solid var(--line); }
+.xside { text-align: center; min-width: 0; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 4px; }
+.xside .lbl { font-size: .68rem; color: var(--muted); line-height: 1.3; }
+.xside .big2 { font-size: 2.1rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; margin: 2px 0; }
+.xside { position: relative; }
+.xside .big2 { padding-bottom: 6px; }
+.xside .was { position: absolute; left: 7px; bottom: 5px; display: flex; align-items: flex-end; gap: 1px; font-size: .74rem; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1; }
+.xside .was s { text-decoration-thickness: 1.5px; }
+.xside .was svg { width: 18px; height: 11px; margin-bottom: 4px; }
+.xside .was path { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.xside.main { border-color: var(--brass-dim); background: color-mix(in srgb, var(--brass) 8%, var(--panel2)); padding: 12px 4px; }
+.xside.main .big2 { font-size: 2.6rem; }
+.xside.main .lbl { color: var(--text); font-size: .74rem; }
+.xside .lbl2 { font-size: .62rem; color: var(--muted); margin-top: 1px; }
+.xside.meet { border-color: color-mix(in srgb, var(--gain) 55%, var(--line)); background: color-mix(in srgb, var(--gain) 10%, var(--panel2)); }
+.xside.meet .big2, .xside.meet .lbl2 { color: var(--gain); }
+.xside.plain .big2 { color: var(--text); }
+.xside.gain .big2 { color: var(--gain); } .xside.lose .big2 { color: var(--loss); }
+.xmid { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.xmid .amt { font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.xmid .note { font-size: .62rem; color: var(--muted); text-align: center; line-height: 1.3; }
+.track { position: relative; width: 100%; height: 12px; }
+.track .rail { position: absolute; inset: 3px 8px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.track .flow { position: absolute; top: 0; bottom: 0; width: 60%; left: 0; }
+.track.right .flow { background: linear-gradient(90deg, transparent, var(--c)); animation: flowR 1s linear infinite; }
+.track.left .flow { background: linear-gradient(270deg, transparent, var(--c)); animation: flowL 1s linear infinite; }
+.track.right .rail { margin-right: 4px; } .track.left .rail { margin-left: 4px; }
+.track.right::after, .track.left::before { content: ''; position: absolute; top: -2px; border: 8px solid transparent; }
+.track.right::after { right: -6px; border-left-color: var(--c); }
+.track.left::before { left: -6px; border-right-color: var(--c); }
+.track.none .rail { opacity: .5; }
+@keyframes flowR { from { transform: translateX(-100%); } to { transform: translateX(170%); } }
+@keyframes flowL { from { transform: translateX(170%); } to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .track .flow { animation: none; width: 100%; } }
+/* amount stepper */
+.bigline { text-align: center; display: flex; flex-direction: column; gap: 2px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.bigline .lbl { font-size: .74rem; color: var(--muted); }
+.bigline .big { font-size: 2.2rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.bigline .big small { font-size: 1rem; color: var(--muted); font-weight: 400; margin: 0 6px; }
+.bigline .note { font-size: .82rem; }
+.stepper { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)); gap: 6px; align-items: center; }
+.stepper .btn { padding: 16px 0; font-size: 1.1rem; font-weight: 700; }
+.stepper .amt { text-align: center; font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.amt-reset { background: transparent; border: 1px dashed transparent; border-radius: 8px; padding: 4px 0; color: var(--text); }
+.amt-reset.dirty { border-color: var(--line); background: var(--panel2); }
+.amt-reset.dirty small { color: var(--brass); }
+.stepper .amt small { display: block; font-size: .64rem; color: var(--muted); font-weight: 400; }
+.quick .btn { padding: 8px 2px; white-space: nowrap; }
+.quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.pct-list { display: grid; grid-template-columns: 3.5em minmax(0, 1fr); gap: 4px 8px; align-items: center; font-size: .82rem; }
+.pct-list .cell { min-height: 26px; }
+/* drawer: eggs + ruin, pulled out from the right edge */
+.drawer { position: fixed; right: 0; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); align-items: flex-end !important; z-index: 7; display: flex; align-items: flex-start; transform: translateX(var(--dw)); transition: transform .35s cubic-bezier(.2,.8,.2,1); --dw: min(300px, 80vw); }
+.drawer.open { transform: none; z-index: 8; }
+.drawer-tab { flex: none; width: 34px; margin-bottom: 8px; border: 0; border-radius: 10px 0 0 10px; background: var(--brass); color: #1a1208; font-family: var(--f-display); font-weight: 800; font-size: .82rem; line-height: 1.15; padding: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; box-shadow: -4px 4px 14px rgba(0,0,0,.5); cursor: pointer; }
+.drawer-tab .tri { font-size: .8rem; transition: transform .35s; }
+.drawer.open .drawer-tab .tri { transform: rotate(180deg); }
+.drawer-body { width: var(--dw); max-height: calc(100vh - 220px); max-height: calc(100dvh - 220px); overflow-y: auto; background: var(--panel); border: 2px solid var(--brass); border-right: 0; border-radius: 12px 0 0 12px; padding: 10px; box-shadow: -8px 8px 24px rgba(0,0,0,.6); }
+.drawer-body .eggs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.drawer-body .ruinline { grid-template-columns: minmax(0, 1fr) auto; }
+.drawer-body .ruinline .btn { grid-column: 1 / -1; }
+.drawer-tab { margin-bottom: 0 !important; }
+.drawer.open .drawer-body { border-bottom-left-radius: 0; }
+body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important; opacity: .35; }
+.drawer-tab { transition: opacity .25s; }
+#drawerRuin { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+#drawer { bottom: calc(196px + env(safe-area-inset-bottom, 0px)); }
+#drawer .drawer-body { max-height: calc(100dvh - 330px); }
+.drawer { transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .2s; }
+.drawer { pointer-events: none; } .drawer-tab, .drawer-body { pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) { .drawer, .drawer-tab .tri { transition: none; } }
+/* dock */
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, var(--ink) 35%); display: flex; justify-content: center; }
+.dock .btn { width: min(640px, 100%); padding: 11px; font-size: 1rem; font-family: var(--f-display); letter-spacing: .2em; }
+
+/* overlays */
+.scrim { position: fixed; inset: 0; background: rgba(5, 3, 8, .72); z-index: 10; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { width: min(560px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 14px 14px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 10px; max-height: 88vh; overflow-y: auto; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sheet h3 { font-size: 1.1rem; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.sheet-desc { display: flex; flex-direction: column; gap: 4px; }
+.sheet .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sheet input[type=number] { width: 7em; background: var(--ink); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 8px; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.sheet input[type=range] { width: 100%; accent-color: var(--brass); }
+.preview { font-size: .88rem; border-left: 3px solid var(--line); padding-left: 10px; }
+.preview .bad { color: var(--loss); font-weight: 700; } .preview .good { color: var(--gain); font-weight: 700; }
+.err { color: var(--loss); font-size: .85rem; min-height: 1.2em; }
+.scrim.center { align-items: center; padding: 16px; }
+.night-card { width: min(460px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 18px; display: flex; flex-direction: column; gap: 10px; max-height: 88vh; overflow-y: auto; }
+.night-card .drawn { font-family: var(--f-display); font-size: 1.5rem; font-weight: 800; text-align: center; animation: rise .5s ease-out both; }
+.night-card .from { text-align: center; color: var(--muted); font-size: .8rem; }
+.night-card .ev { font-size: .88rem; }
+.night-card .ev.bad { color: var(--loss); } .night-card .ev.good { color: var(--gain); } .night-card .ev.moon { color: var(--brass); }
+@keyframes rise { from { opacity: .2; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .night-card .drawn { animation: none; } }
+.end h3 { font-size: 1.6rem; text-align: center; }
+.end .verdict { text-align: center; color: var(--muted); font-family: var(--f-display); }
+.answers { display: flex; flex-direction: column; gap: 6px; font-size: .86rem; }
+.answers .hl { color: var(--loss); }
+.regime-strip { display: flex; gap: 2px; flex-wrap: wrap; }
+.regime-strip span { font-size: .62rem; width: 1.6em; text-align: center; border-radius: 2px; padding: 1px 0; color: #120e16; font-weight: 700; }
+.rg-tax { background: var(--s-life); } .rg-war { background: var(--s-war); } .rg-plague { background: var(--s-plague); } .rg-purge { background: var(--s-power); } .rg-boom { background: #e8e2d4; }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <div class="sticky-top">
+  <header class="top">
+    <div class="title-row"><h1>亡国の王女</h1><span class="night num" id="night"></span></div>
+    <div class="stats" id="stats"></div>
+    <div class="health" id="health"></div>
+  </header>
+
+  <div class="lastnight" id="lastNight" hidden></div>
+  </div>
+
+  <section>
+    <h2>帝国の気配 <small>毎夜、この5つのうちどれかが起きる</small></h2>
+    <div class="omtable" id="omens"></div>
+    <div class="omen-note" id="omenNote"></div>
+  </section>
+
+  <section>
+    <h2>使い魔 <small>タップで餌・回収。3体まで</small></h2>
+    <div class="famlist" id="fams"></div>
+  </section>
+
+
+  <div class="tools">
+    <button class="btn" data-panel="howto">遊び方</button>
+    <button class="btn" data-panel="targets">復讐の名簿</button>
+    <button class="btn" data-panel="ledger">悪魔の帳簿</button>
+    <button class="btn" data-panel="log">記録</button>
+  </div>
+  <div class="tools" style="grid-template-columns:1fr"><button class="btn" data-panel="rules">ルールブック（確率はすべて公開）</button></div>
+</div>
+
+<aside class="drawer" id="drawer" aria-label="卵">
+  <button class="drawer-tab" data-drawer="drawer" aria-expanded="false"><span class="tri">◀</span><span class="tab-txt">卵</span></button>
+  <div class="drawer-body">
+    <h2>卵 <small>タップで孵す。色は喰う恐怖</small></h2>
+    <div class="eggs" id="eggs"></div>
+  </div>
+</aside>
+<aside class="drawer" id="drawerRuin" aria-label="破滅">
+  <button class="drawer-tab" data-drawer="drawerRuin" aria-expanded="false"><span class="tri">◀</span><span class="tab-txt">破<br>滅</span></button>
+  <div class="drawer-body">
+    <h2>破滅 <small>一夜に一人まで</small></h2>
+    <div class="ruinline" id="ruinBox"></div>
+  </div>
+</aside>
+<div class="dock"><button class="btn primary" id="endTurn">夜を越す</button></div>
+<div id="layer"></div>
+
+<script>
+/* 亡国の王女 — game engine (pure logic, no DOM) */
+(function (root) {
+  'use strict';
+
+  // 4つの恐怖（＝投資先の4分野）
+  const SECTORS = ['war', 'plague', 'life', 'power'];
+  const SECT_JP = { war: '戦', plague: '疫', life: '飢', power: '罰' };
+  const SECT_DESC = {
+    war: '戦への恐怖。徴兵や敗戦の噂で高まり、和平で鎮まる',
+    plague: '疫病への恐怖。流行で高まり、薬師の到来で鎮まる',
+    life: '飢えへの恐怖。重税や麦の高騰で高まり、豊作で鎮まる',
+    power: '罰への怯え。魔女狩りや粛清で高まる'
+  };
+
+  // 使い魔の種族（実在の金融商品がモチーフ）
+  // basic: 最初から選べる4種（4つの恐怖に1対1）。それ以外は第5夜から悪魔が持ってくる。
+  const SPECIES = {
+    crow:   { name: '鴉',       motif: '景気敏感株', basic: true, fee: 2, sens: { war: 1, life: .1 },
+              desc: '戦の恐怖を喰う。遠征期に大きく育ち、和平で痩せる。' },
+    rat:    { name: '鼠',       motif: '新興・小型株', basic: true, fee: 1, sens: { plague: 1.6, life: .1 }, exoWeak: 1.4,
+              desc: '疫病の恐怖を喰う。当たれば化けるが振れが激しく、騎士団にも弱い。' },
+    locust: { name: '蝗',       motif: '生活必需品株', basic: true, fee: 1, sens: { life: .5, plague: .1 }, exoResist: .5,
+              desc: '飢えの恐怖を喰う。振れが小さく、騎士団の被害も半分。' },
+    shadow: { name: '影法師',    motif: '防衛・警備株', basic: true, fee: 2, sens: { power: .5 }, inverse: true, decay: .02,
+              desc: '罰への怯えを喰う。騎士団が動くほど太り、他の使い魔と逆に動く。毎夜2%痩せる。' },
+    moth:   { name: '蛾',       motif: 'インデックス投信', fee: 1, sens: { war: .35, plague: .35, life: .35, power: .35 },
+              desc: '群れで4つの恐怖すべてを薄く広く喰う。大きく外れない。' },
+    bee:    { name: '蜂',       motif: '高配当株', fee: 2, sens: { life: .3, war: .1 }, yield: .03,
+              desc: '毎夜、蓄えの3%を欠片にして運んでくる。本体は育ちにくい。' },
+    snake:  { name: '蛇',       motif: '債券', fee: 1, bond: { turns: 6, rate: .15 },
+              desc: '札の影響を受けず地下で眠る。6夜後に蓄え×1.15で目覚める。途中で起こすと2割減。' },
+    gold:   { name: '金色の蜥蜴', motif: '金（ゴールド）', fee: 2, sens: { war: .25, plague: .3, power: .35, life: -.3 }, exoResist: 1,
+              desc: '戦・疫・罰で帝国が荒れると値を上げる。飢えの時期は民が金を手放すので沈む。騎士団に狩られない。' },
+    wolf:   { name: '双頭の狼',  motif: 'レバレッジETF', fee: 2, sens: { war: 2, life: .2 }, decay: .03,
+              desc: '鴉の2倍の振れ幅。毎夜3%痩せる。短期決戦向け。' }
+  };
+  const SPECIES_KEYS = Object.keys(SPECIES);
+  const BASIC_KEYS = SPECIES_KEYS.filter(k => SPECIES[k].basic);
+  const RARE_KEYS = SPECIES_KEYS.filter(k => !SPECIES[k].basic);
+
+  // 場札（帝国の気配）。値は「その恐怖が何割増えるか」
+  const CARDS = {
+    grain:      { name: '麦の値上がり',   fx: { life: .15 } },
+    tax:        { name: '重税の布告',     fx: { life: .2, power: .03 } },
+    sleepless:  { name: '眠れぬ夜',       fx: { war: .04, plague: .04, life: .04, power: .04 } },
+    omen:       { name: '凶星が昇る',     fx: { war: .06, plague: .06, life: .06, power: .06 } },
+    rumor:      { name: '不穏な噂',       split: ['rumorGood', 'patrolLife'] },
+    rumorGood:  { name: '噂が飢えを煽る', fx: { life: .2 }, hiddenInDeck: true },
+    harvest:    { name: '豊作の報せ',     fx: { life: -.3 } },
+    march:      { name: '出征の行列',     fx: { war: .25, life: .03 } },
+    conscript:  { name: '徴兵令',         fx: { war: .32, life: -.08 } },
+    letter:     { name: '前線からの密書', split: ['letterGood', 'letterBad'] },
+    letterGood: { name: '敗走の報せ',     fx: { war: .32 }, hiddenInDeck: true },
+    letterBad:  { name: '休戦の報せ',     fx: { war: -.3 }, hiddenInDeck: true },
+    peace:      { name: '和平の噂',       fx: { war: -.3 } },
+    plague:     { name: '疫病の流行',     fx: { plague: .42, life: -.05 } },
+    quarantine: { name: '隔離令',         fx: { plague: .2, life: -.1 } },
+    healer:     { name: '薬師の到来',     fx: { plague: -.35 } },
+    edict:      { name: '魔女狩りの布告', fx: { power: .25, life: -.05 } },
+    patrolWar:    { name: '騎士団の巡回（戦）', exo: { target: 'war', e: -.55 } },
+    patrolPlague: { name: '騎士団の巡回（疫）', exo: { target: 'plague', e: -.55 } },
+    patrolLife:   { name: '騎士団の巡回（飢）', exo: { target: 'life', e: -.55 } },
+    patrolPower:  { name: '騎士団の巡回（罰）', exo: { target: 'power', e: -.55 } },
+    inquisition:  { name: '異端審問',           exo: { target: 'all', e: -.22 } },
+    // 繁栄期：民の恐怖が消える（使い魔にとっての恐慌）。宴の夜は宮廷の警護が緩む。
+    founding:   { name: '建国祭',         fx: { war: -.12, plague: -.12, life: -.12, power: -.12 }, lax: true },
+    feast:      { name: '戦勝の祝宴',     fx: { war: -.25, life: -.1 }, lax: true },
+    amnesty:    { name: '皇帝の恩赦',     fx: { power: -.35 } },
+    clinic:     { name: '施療院の開設',   fx: { plague: -.3 } },
+    bounty:     { name: '大豊作',         fx: { life: -.3, plague: -.05 } }
+  };
+
+  // 情勢ごとの山札の構成（重み）。ルールブックで全公開。今の情勢だけ非公開。
+  const REGIMES = {
+    tax:    { name: '重税', deck: { grain: 4, tax: 3, sleepless: 4, omen: 2, rumor: 3, march: 1, harvest: 1, peace: 1, patrolLife: 1, patrolWar: 1 } },
+    war:    { name: '遠征', deck: { march: 4, conscript: 3, letter: 3, peace: 1, patrolWar: 2, grain: 1, omen: 1 } },
+    plague: { name: '疫病', deck: { plague: 4, quarantine: 3, healer: 2, patrolPlague: 2, rumor: 1, inquisition: 1, sleepless: 1 } },
+    purge:  { name: '粛清', deck: { edict: 3, patrolWar: 2, patrolPlague: 2, patrolLife: 2, patrolPower: 1, inquisition: 2, rumor: 1 } },
+    boom:   { name: '繁栄', deck: { founding: 4, feast: 3, amnesty: 2, clinic: 2, bounty: 2, peace: 1, omen: 1, rumor: 1 } }
+  };
+  const REGIME_KEYS = Object.keys(REGIMES);
+  const STAY = 0.8; // 情勢が続く確率。変わる時は残り4つに等分。
+
+  // 帝国の要人（破滅の順番）
+  const TARGETS = [
+    { name: '占領地総督 グラム', title: '王都を焼いた男' },
+    { name: '聖堂騎士団長 イーヴァ', title: '王家の礼拝堂を焼いた' },
+    { name: '将軍 バルトロ', title: '城門を破り、兄を討った' },
+    { name: '宰相 メルヴィル', title: '侵略を計画した' },
+    { name: '皇帝 ヴァルディス', title: 'すべての始まり' }
+  ];
+
+  const P = {
+    startShards: 30,
+    startDebt: 30,
+    moonEvery: 4,
+    moonInterest: .08,
+    payRate: .2,
+    payMin: 5,
+    latePenalty: .5,
+    lateShorten: 2,
+    borrowRate: 1.5,
+    borrowShorten: 2,
+    debtCap: 90,
+    marginLine: .4,
+    deathMin: 20,
+    deathMax: 28,
+    ruinStart: 10,
+    ruinDrift: .03,
+    ruinNoise: .05,
+    ruinStep: .08,
+    exoDiscount: .8,
+    winRuins: 5,
+    fieldSize: 5,
+    slots: 3,
+    eggs: 3,
+    recoverFee: .05,
+    lossCut: 0, // 0 = ロスカットなし
+    scoutCost: 2,
+    minFeed: 1,
+    boom: 2,
+    rareFrom: 5
+  };
+
+  function mkRng(seed) {
+    if (seed == null) return Math.random;
+    let s = seed >>> 0;
+    return function () { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+  function pickWeighted(rng, w) {
+    let tot = 0; for (const k in w) tot += w[k];
+    let r = rng() * tot;
+    for (const k in w) { r -= w[k]; if (r <= 0) return k; }
+    return Object.keys(w)[0];
+  }
+  const r1 = x => Math.round(x * 10) / 10;
+
+  function lateMult(turn) { return 1 + (turn - 1) / 25; }
+  function publicChance(turn) { return Math.max(.15, .8 - turn * .028); }
+
+  function newGame(seed) {
+    const rng = mkRng(seed);
+    const s = {
+      rng, turn: 1, shards: P.startShards, debt: P.startDebt,
+      deathTurn: P.deathMin + Math.floor(rng() * (P.deathMax - P.deathMin + 1)),
+      regime: 'tax', regimeHistory: ['tax'],
+      field: [], eggs: [], fams: [], famSeq: 0,
+      ruinPrice: P.ruinStart, ruined: 0, ruinedThisTurn: false,
+      log: [], over: false, result: null,
+      stats: { lossCutLost: 0, missedByCut: 0, fees: 0, borrowed: 0, latePays: 0, cutEarly: 0, worstHold: null, peakShards: P.startShards, lossCuts: [] },
+      lastDraw: null
+    };
+    for (let i = 0; i < P.fieldSize; i++) s.field.push(drawCard(s, true));
+    rollEggs(s);
+    s.log.push({ t: 1, kind: 'story', text: '国が落ちた夜、幼い王女は悪魔と契約した。命が尽きる前に、帝国に報いを。' });
+    return s;
+  }
+
+  function drawCard(s, initial) {
+    const key = pickWeighted(s.rng, REGIMES[s.regime].deck);
+    const pub = s.rng() < (initial ? .8 : publicChance(s.turn));
+    return { key, public: pub, born: s.regime };
+  }
+
+  function rollEggs(s) {
+    s.eggs = BASIC_KEYS.slice();
+    if (s.turn >= P.rareFrom) s.eggs.push(RARE_KEYS[Math.floor(s.rng() * RARE_KEYS.length)]);
+  }
+
+  // 1枚の札（split解決済み）が、ある種族の蓄えを何割動かすか（後半倍率込み）
+  function cardEffectOn(cardKey, spKey, turn) {
+    const c = CARDS[cardKey], sp = SPECIES[spKey];
+    const m = lateMult(turn);
+    if (sp.bond) return 0;
+    if (c.fx) {
+      let ch = 0;
+      for (const k in c.fx) ch += (sp.sens[k] || 0) * c.fx[k] * (c.fx[k] > 0 ? P.boom : 1);
+      return ch * m;
+    }
+    if (c.exo) {
+      if (sp.inverse) return -c.exo.e * .4 * m;
+      let exp;
+      if (c.exo.target === 'all') exp = .6;
+      else exp = Math.min(1, Math.max(0, sp.sens[c.exo.target] || 0));
+      exp *= (sp.exoWeak || 1) * (1 - (sp.exoResist || 0));
+      return c.exo.e * exp * m;
+    }
+    return 0;
+  }
+  // 札（splitなら両方の結果）を返す
+  function outcomes(cardKey) {
+    const c = CARDS[cardKey];
+    return c.split ? c.split.map(k => ({ key: k, p: .5 })) : [{ key: cardKey, p: 1 }];
+  }
+  function isExo(cardKey) { return !!CARDS[cardKey].exo; }
+
+  function nextPayment(s) {
+    const d = s.debt * (1 + P.moonInterest);
+    return Math.min(Math.ceil(d), Math.max(P.payMin, Math.ceil(d * P.payRate)));
+  }
+  function nightsToMoon(s) { return P.moonEvery - ((s.turn - 1) % P.moonEvery); }
+
+  const SYMPTOMS = ['落ち着いている', 'ときどき咳き込む', '熱が下がらない', '咳に血が混じる', '指先が冷たく、もう温まらない'];
+  function symptom(s) {
+    const left = s.deathTurn - s.turn;
+    const lv = left > 14 ? 0 : left > 10 ? 1 : left > 6 ? 2 : left > 3 ? 3 : 4;
+    return { lv, text: SYMPTOMS[lv] };
+  }
+
+  // ---------- 行動 ----------
+  function err(msg) { return { ok: false, msg }; }
+
+  function hatch(s, eggIdx, amount) {
+    if (s.over) return err('ゲームは終わっています');
+    const sp = s.eggs[eggIdx]; if (!sp) return err('卵がありません');
+    if (s.fams.length >= P.slots) return err('使い魔は3体までです。誰かを回収して枠を空けてください');
+    amount = Math.floor(amount);
+    const fee = SPECIES[sp].fee;
+    if (amount < P.minFeed) return err(`最初の餌は${P.minFeed}以上必要です`);
+    if (amount + fee > s.shards) return err('欠片が足りません');
+    s.shards -= amount + fee; s.stats.fees += fee;
+    const f = { id: ++s.famSeq, sp, value: amount, invested: amount, born: s.turn, warn: null, peak: amount, history: [amount] };
+    s.fams.push(f);
+    if (!SPECIES[sp].basic) s.eggs.splice(eggIdx, 1);
+    s.log.push({ t: s.turn, kind: 'act', text: `${SPECIES[sp].name}を孵した（代価${fee}・餌${amount}）` });
+    return { ok: true };
+  }
+
+  function feed(s, famId, amount) {
+    if (s.over) return err('ゲームは終わっています');
+    const f = s.fams.find(x => x.id === famId); if (!f) return err('使い魔がいません');
+    amount = Math.floor(amount);
+    if (amount < 1) return err('1以上を指定してください');
+    if (amount > s.shards) return err('欠片が足りません');
+    if (SPECIES[f.sp].bond) return err('眠っている蛇には餌を与えられません');
+    s.shards -= amount; f.value += amount; f.invested += amount;
+    s.log.push({ t: s.turn, kind: 'act', text: `${SPECIES[f.sp].name}に欠片${amount}を与えた` });
+    return { ok: true };
+  }
+
+  function recoverPreview(s, famId, amount) {
+    const f = s.fams.find(x => x.id === famId); if (!f) return null;
+    amount = Math.min(f.value, amount);
+    const sp = SPECIES[f.sp];
+    let fee = P.recoverFee;
+    if (sp.bond && s.turn - f.born < sp.bond.turns) fee = .2;
+    const get = Math.floor(amount * (1 - fee) * 10) / 10;
+    const all = amount >= f.value - 0.05;
+    const share = amount / f.value;
+    const realized = (amount * (1 - fee)) - f.invested * share; // 確定損益
+    return { get, fee, all, realized: r1(realized) };
+  }
+
+  function recover(s, famId, amount) {
+    if (s.over) return err('ゲームは終わっています');
+    const f = s.fams.find(x => x.id === famId); if (!f) return err('使い魔がいません');
+    if (amount <= 0) return err('量を指定してください');
+    const pv = recoverPreview(s, famId, amount);
+    amount = Math.min(f.value, amount);
+    const share = amount / f.value;
+    s.shards = r1(s.shards + pv.get);
+    s.stats.fees += r1(amount - pv.get);
+    if (pv.all) {
+      s.fams = s.fams.filter(x => x !== f);
+      if (pv.realized < 0) s.stats.cutEarly++;
+      s.log.push({ t: s.turn, kind: pv.realized < 0 ? 'bad' : 'good', text: `${SPECIES[f.sp].name}を喰らった。欠片${pv.get}を回収（確定${pv.realized >= 0 ? '+' : ''}${pv.realized}）` });
+    } else {
+      f.value = r1(f.value - amount); f.invested = r1(f.invested * (1 - share));
+      s.log.push({ t: s.turn, kind: 'act', text: `${SPECIES[f.sp].name}から欠片${pv.get}を吸い上げた` });
+    }
+    return { ok: true, got: pv.get };
+  }
+
+  // 手元に受け取る量（net）で指定する回収。目減り分は使い魔の蓄えから余分に差し引く。
+  function feeOf(s, f) { const sp = SPECIES[f.sp]; return sp.bond && s.turn - f.born < sp.bond.turns ? .2 : P.recoverFee; }
+  function maxNet(s, famId) { const f = s.fams.find(x => x.id === famId); return f ? Math.floor(f.value * (1 - feeOf(s, f)) * 10) / 10 : 0; }
+  function withdrawPreview(s, famId, net) {
+    const f = s.fams.find(x => x.id === famId); if (!f) return null;
+    const fee = feeOf(s, f), mx = maxNet(s, famId);
+    const all = net >= mx - 0.05;
+    const get = all ? mx : net;
+    const cost = all ? f.value : Math.min(f.value, net / (1 - fee));
+    const share = cost / f.value;
+    return { get, cost: r1(cost), fee, all, left: all ? 0 : r1(f.value - cost), realized: r1(get - f.invested * share) };
+  }
+  function withdraw(s, famId, net) {
+    if (s.over) return err('ゲームは終わっています');
+    const f = s.fams.find(x => x.id === famId); if (!f) return err('使い魔がいません');
+    if (net <= 0) return err('量を指定してください');
+    const pv = withdrawPreview(s, famId, net);
+    s.shards = r1(s.shards + pv.get);
+    s.stats.fees = r1(s.stats.fees + pv.cost - pv.get);
+    if (pv.all) {
+      s.fams = s.fams.filter(x => x !== f);
+      if (pv.realized < 0) s.stats.cutEarly++;
+      s.log.push({ t: s.turn, kind: pv.realized < 0 ? 'bad' : 'good', text: `${SPECIES[f.sp].name}を喰らった。欠片${pv.get}を回収（確定${pv.realized >= 0 ? '+' : ''}${pv.realized}）` });
+    } else {
+      const share = pv.cost / f.value;
+      f.value = pv.left; f.invested = r1(f.invested * (1 - share));
+      s.log.push({ t: s.turn, kind: 'act', text: `${SPECIES[f.sp].name}から欠片${pv.get}を吸い上げた（使い魔は${pv.cost}減った）` });
+    }
+    return { ok: true, got: pv.get };
+  }
+
+  function borrow(s, amount) {
+    if (s.over) return err('ゲームは終わっています');
+    amount = Math.floor(amount);
+    if (amount < 1) return err('1以上を指定してください');
+    const add = Math.ceil(amount * P.borrowRate);
+    if (s.debt + add > P.debtCap) return err(`悪魔はこれ以上貸さない（借りの上限は${P.debtCap}）`);
+    s.shards += amount; s.debt += add; s.stats.borrowed += amount;
+    s.deathTurn -= P.borrowShorten;
+    s.log.push({ t: s.turn, kind: 'bad', text: `命を担保に、悪魔から欠片${amount}を借りた（悪魔への借り+${add}）` });
+    return { ok: true };
+  }
+
+  function ruin(s) {
+    if (s.over) return err('ゲームは終わっています');
+    if (s.ruinedThisTurn) return err('破滅は一夜に一人までです');
+    if (s.ruined >= TARGETS.length) return err('もう誰も残っていません');
+    const price = Math.ceil(s.ruinPrice);
+    if (s.shards < price) return err('欠片が足りません');
+    s.shards = r1(s.shards - price);
+    const tg = TARGETS[s.ruined];
+    s.ruined++; s.ruinedThisTurn = true;
+    s.ruinPrice *= (1 + P.ruinStep);
+    s.log.push({ t: s.turn, kind: 'ruin', text: `${tg.name}に破滅が訪れた。` });
+    if (s.ruined >= TARGETS.length) finish(s, 'win');
+    return { ok: true, target: tg };
+  }
+
+  function scout(s, fieldIdx) {
+    if (s.over) return err('ゲームは終わっています');
+    const c = s.field[fieldIdx]; if (!c) return err('札がありません');
+    if (c.public) return err('すでに見えています');
+    if (s.shards < P.scoutCost) return err('欠片が足りません');
+    s.shards -= P.scoutCost; c.public = true; c.scouted = true;
+    s.log.push({ t: s.turn, kind: 'act', text: `偵察で伏せ札を覗いた：${CARDS[c.key].name}` });
+    return { ok: true };
+  }
+
+  // ---------- 夜を越す ----------
+  function endTurn(s) {
+    if (s.over) return err('ゲームは終わっています');
+    const ev = [];
+    const idx = Math.floor(s.rng() * s.field.length);
+    const drawn = s.field.splice(idx, 1)[0];
+    let key = drawn.key;
+    const c0 = CARDS[key];
+    if (c0.split) key = c0.split[s.rng() < .5 ? 0 : 1];
+    s.lastDraw = { from: drawn.key, key, wasPublic: drawn.public, idx };
+    ev.push({ kind: isExo(key) ? 'bad' : 'card', text: `${drawn.public ? '' : '伏せ札が開いた：'}${CARDS[drawn.key].name}${key !== drawn.key ? ` → ${CARDS[key].name}` : ''}` });
+
+    // 使い魔の変動
+    for (const f of [...s.fams]) {
+      const sp = SPECIES[f.sp];
+      let ch = cardEffectOn(key, f.sp, s.turn);
+      if (sp.decay) ch -= sp.decay;
+      ch = Math.max(-.95, ch);
+      f.value = r1(Math.max(0, f.value * (1 + ch)));
+      if (sp.yield && f.value > 0) {
+        const y = r1(f.value * sp.yield); s.shards = r1(s.shards + y);
+      }
+      f.peak = Math.max(f.peak, f.value);
+      f.history.push(f.value);
+      f.lastChange = ch;
+      if (f.warn == null && f.value < f.invested * .7) f.warn = f.value;
+      if (sp.bond && s.turn + 1 - f.born >= sp.bond.turns) {
+        const get = r1(f.value * (1 + sp.bond.rate));
+        s.shards = r1(s.shards + get);
+        s.fams = s.fams.filter(x => x !== f);
+        ev.push({ kind: 'good', text: `${sp.name}が目覚め、欠片${get}を返した` });
+        continue;
+      }
+      if (P.lossCut > 0 && f.value < f.invested * P.lossCut) {
+        s.fams = s.fams.filter(x => x !== f);
+        s.stats.lossCutLost += f.value;
+        if (f.warn != null) s.stats.missedByCut = r1(s.stats.missedByCut + f.warn * (1 - P.recoverFee));
+        s.stats.lossCuts.push({ sp: f.sp, invested: r1(f.invested), warn: f.warn, peak: f.peak, born: f.born, died: s.turn });
+        ev.push({ kind: 'bad', text: `${sp.name}は騎士団に捕捉され、消滅した（注ぎ込んだ欠片${r1(f.invested)}が無に）` });
+      }
+    }
+
+    // 破滅の価格
+    let drift = 1 + P.ruinDrift + (s.rng() * 2 - 1) * P.ruinNoise;
+    if (isExo(key)) { drift *= P.exoDiscount; ev.push({ kind: 'card', text: '騎士団が出払い、宮廷の守りが手薄になった' }); }
+    else if (CARDS[key].lax) { drift *= P.exoDiscount; ev.push({ kind: 'card', text: '宴に酔い、宮廷の警護が緩んだ' }); }
+    s.ruinPrice = s.ruinPrice * drift;
+
+    // 新月の取り立て
+    if ((s.turn % P.moonEvery) === 0) {
+      s.debt = Math.ceil(s.debt * (1 + P.moonInterest));
+      const pay = Math.min(s.debt, Math.max(P.payMin, Math.ceil(s.debt * P.payRate)));
+      if (s.shards >= pay) {
+        s.shards = r1(s.shards - pay); s.debt -= pay;
+        ev.push({ kind: 'moon', text: `新月。悪魔に欠片${pay}を納めた` });
+      } else {
+        const paid = Math.floor(s.shards); const short = pay - paid;
+        s.shards = r1(s.shards - paid); s.debt -= paid;
+        s.debt += Math.ceil(short * P.latePenalty);
+        s.deathTurn -= P.lateShorten; s.stats.latePays++;
+        ev.push({ kind: 'bad', text: `新月。欠片が${short}足りず、悪魔は王女の命を喰らった` });
+      }
+    }
+
+    // 情勢の推移（非公開）
+    if (s.rng() >= STAY) {
+      const others = REGIME_KEYS.filter(k => k !== s.regime);
+      s.regime = others[Math.floor(s.rng() * others.length)];
+    }
+    s.regimeHistory.push(s.regime);
+
+    // 補充・卵
+    s.turn++;
+    s.field.push(drawCard(s));
+    rollEggs(s);
+    s.ruinedThisTurn = false;
+    s.stats.peakShards = Math.max(s.stats.peakShards, s.shards);
+
+    for (const e of ev) s.log.push({ t: s.turn - 1, ...e });
+
+    if (s.stats.borrowed > 0 && s.debt > 0 && netWorth(s) < s.debt * P.marginLine) {
+      s.log.push({ t: s.turn - 1, kind: 'bad', text: '魂の総量が借りに見合わなくなった。悪魔は契約を打ち切り、王女の魂を回収した' });
+      finish(s, 'margin');
+    } else if (s.turn > s.deathTurn) finish(s, s.ruined >= P.winRuins ? 'win' : 'lose');
+    return { ok: true, events: ev, drawn: s.lastDraw };
+  }
+
+  function finish(s, result) {
+    s.over = true; s.result = result;
+    s.stats.leftover = r1(s.shards + s.fams.reduce((a, f) => a + f.value, 0));
+  }
+
+  function netWorth(s) { return r1(s.shards + s.fams.reduce((a, f) => a + f.value, 0)); }
+
+  const API = { SECTORS, SECT_JP, SECT_DESC, SYMPTOMS, SPECIES, SPECIES_KEYS, BASIC_KEYS, RARE_KEYS, CARDS, REGIMES, REGIME_KEYS, STAY, TARGETS, P,
+    newGame, hatch, feed, recover, recoverPreview, withdraw, withdrawPreview, maxNet, borrow, ruin, scout, endTurn,
+    cardEffectOn, outcomes, isExo, nextPayment, nightsToMoon, symptom, netWorth, lateMult, publicChance, mkRng };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  else root.Engine = API;
+})(this);
+
+</script>
+<script>
+(function () {
+  const E = window.Engine;
+  let S = E.newGame();
+  let newCardIdx = -1, animateNew = false;
+  const $ = id => document.getElementById(id);
+  const fmt = x => (Math.round(x * 10) / 10).toString();
+  const pct = x => (x >= 0 ? '+' : '−') + Math.abs(Math.round(x * 100)) + '%';
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const SECT_LONG = { war: '戦争', plague: '疫病', life: '飢え', power: '粛清' };
+
+  // 種族の主な恐怖（名前の色）
+  // 説明文の中の不安・騎士団の語に色を付ける
+  function cdesc(t) {
+    const map = { '疫病': 's-plague', '疫': 's-plague', '飢え': 's-life', '飢': 's-life', '戦': 's-war', '罰': 's-power', '騎士団': 'dn' };
+    return esc(t).replace(/疫病|飢え|騎士団|疫|飢|戦|罰/g, m => `<b class="${map[m]}">${m}</b>`);
+  }
+  function mainSector(spKey) {
+    const sp = E.SPECIES[spKey];
+    if (!sp.sens) return null;
+    let best = null, bv = 0;
+    for (const k of E.SECTORS) if ((sp.sens[k] || 0) > bv) { bv = sp.sens[k]; best = k; }
+    const n = E.SECTORS.filter(k => (sp.sens[k] || 0) >= .3).length;
+    return n >= 3 ? 'mixed' : best;
+  }
+  function spName(spKey) {
+    const m = mainSector(spKey);
+    const cls = m && m !== 'mixed' ? `s-${m}` : '';
+    return `<span class="${cls}">${esc(E.SPECIES[spKey].name)}</span>`;
+  }
+  function affinity(spKey) {
+    const sp = E.SPECIES[spKey];
+    if (sp.bond) return '<span style="color:var(--muted)">札の影響なし・満期で返る</span>';
+    const parts = E.SECTORS.filter(k => sp.sens && Math.abs(sp.sens[k] || 0) >= .1).sort((a, b) => Math.abs(sp.sens[b]) - Math.abs(sp.sens[a]))
+      .map(k => { const v = sp.sens[k]; const lvl = Math.abs(v) >= 1.5 ? '◎◎' : Math.abs(v) >= .8 ? '◎' : Math.abs(v) >= .3 ? '○' : '△'; return `<span class="s-${k} ${v < 0 ? 'neg' : ''}">${E.SECT_JP[k]}${v < 0 ? '逆' : lvl}</span>`; });
+    if (sp.inverse) parts.push('<span class="dn">騎で太る</span>');
+    else if (sp.exoResist >= 1) parts.push('<span style="color:var(--muted)">騎無効</span>');
+    return parts.join('');
+  }
+
+  function cardChips(key) {
+    const c = E.CARDS[key];
+    if (c.fx) return Object.keys(c.fx).map(k => { const v = c.fx[k] * (c.fx[k] > 0 ? E.P.boom : 1); return `<span class="chip s-${k}">${E.SECT_JP[k]}${pct(v)}</span>`; }).join('');
+    if (c.exo) { const t = c.exo.target === 'all' ? '全' : E.SECT_JP[c.exo.target]; return `<span class="chip dn">騎士団 ${t}${pct(c.exo.e * (c.exo.target === 'all' ? .6 : 1))}</span>`; }
+    return '';
+  }
+  function sectorVals(key) {
+    const c = E.CARDS[key], m = E.lateMult(S.turn), out = {};
+    if (c.fx) for (const k in c.fx) out[k] = { v: c.fx[k] * (c.fx[k] > 0 ? E.P.boom : 1) * m };
+    if (c.exo) { const ts = c.exo.target === 'all' ? E.SECTORS : [c.exo.target]; for (const k of ts) out[k] = { v: c.exo.e * m * (c.exo.target === 'all' ? .6 : 1), k: true }; }
+    return out;
+  }
+  const BAR_MAX = .8;
+  // 荒い強さ表示：小・中・大
+  function lvl(v) { const a = Math.abs(v); return a < .02 ? '' : a < .12 ? '小' : a < .3 ? '中' : '大'; }
+  function arrowLv(v) { const l = lvl(v); return l ? (v >= 0 ? '↑' : '↓') + l : '–'; }
+  function barHTML(o, showPct) {
+    if (!o || Math.abs(o.v) < .005) return '<div class="half"><span class="zero"></span></div>';
+    const w = Math.min(1, Math.abs(o.v) / BAR_MAX) * 50, pos = o.v >= 0;
+    return `<div class="half"><span class="zero"></span><span class="b ${pos ? 'pos' : 'neg'}" style="left:${pos ? 50 : 50 - w}%;width:${w}%"></span><span class="v ${pos ? 'pos' : 'neg'} ${o.k ? 'k' : ''}">${showPct ? pct(o.v) : arrowLv(o.v)}</span></div>`;
+  }
+  // 札の効果をひとことで（例：飢↑大・罰↑小）
+  function effectText(key) {
+    const c = E.CARDS[key], m = E.lateMult(S.turn);
+    if (c.fx) return Object.keys(c.fx).map(k => { const v = c.fx[k] * (c.fx[k] > 0 ? E.P.boom : 1) * m; return `<span class="s-${k}">${E.SECT_JP[k]}</span><span class="${v >= 0 ? 'up' : 'dn'}">${arrowLv(v)}</span>`; }).join('・');
+    if (c.exo) return c.exo.target === 'all' ? '<span class="dn">騎士団がすべての使い魔を狩る（中）</span>' : `<span class="dn">騎士団が</span><span class="s-${c.exo.target}">${E.SECT_JP[c.exo.target]}</span><span class="dn">の使い魔を狩る（大）</span>`;
+    return '';
+  }
+  function omenRow(card, i) {
+    const nw = i === newCardIdx ? '<span class="new">新</span>' : '';
+    const band = i % 2 === 0 ? 'band-a' : 'band-b';
+    const rowCls = `om-row ${band}${i === newCardIdx && animateNew ? ' enter' : ''}`;
+    if (!card.public) return `<div class="${rowCls}" data-row="${i}"><div class="om-name hid">${nw}<div class="nm"><span class="ix">${i + 1}</span>伏せ札</div></div>
+      <div class="om-hid"><span>中身は今の情勢の山札しだい</span><button class="btn" data-scout="${i}" ${S.shards < E.P.scoutCost ? 'disabled' : ''}>偵察 ${E.P.scoutCost}</button></div></div>`;
+    const c = E.CARDS[card.key];
+    const parts = c.split ? c.split.map(sectorVals) : [sectorVals(card.key)];
+    const sub = c.split ? '<small>半々で上か下</small>' : '';
+    return `<div class="${rowCls}" data-row="${i}"><div class="om-name ${E.isExo(card.key) ? 'exo' : ''}" data-omen="${i}">${nw}<div class="nm"><span class="ix">${i + 1}</span>${esc(c.name)}</div>${sub}</div>` +
+      E.SECTORS.map(k => `<div class="cell" data-omen="${i}">${parts.map(p => barHTML(p[k])).join('')}</div>`).join('') + '</div>';
+  }
+  function expected(key, sp) { return E.outcomes(key).reduce((a, o) => a + o.p * E.cardEffectOn(o.key, sp, S.turn), 0); }
+  function minis(f, showPct) {
+    const sp = E.SPECIES[f.sp];
+    if (sp.bond) return `<div class="sub" style="text-align:center">目覚めまで あと${sp.bond.turns - (S.turn - f.born)}夜</div>`;
+    return `<div class="minis">${S.field.map((c, i) => {
+      if (!c.public) return `<div class="cell"><span class="ixl">${i + 1}</span><div class="half"><span class="v" style="color:var(--hidden)">？</span></div></div>`;
+      return `<div class="cell" data-omen="${i}"><span class="ixl">${i + 1}</span>${barHTML({ v: expected(c.key, f.sp) - (sp.decay || 0) }, showPct)}</div>`;
+    }).join('')}</div>`;
+  }
+
+  let lastNight = null;
+  const FLAVOR = {
+    grain: '市場の麦が一夜で倍の値になった。パン屋の前には、夜明け前から列ができている。',
+    tax: '徴税官が新たな税を読み上げた。この冬を越せるのかと、民は声をひそめる。',
+    sleepless: '理由のわからない不安が街を覆った。どの家も、遅くまで灯りが消えない。',
+    omen: '赤い星が東の空に昇った。司祭は口を閉ざし、民は凶事を数えはじめた。',
+    rumorGood: '「冬の蓄えはもう尽きたらしい」。噂は一晩で街中に広がり、民の食糧難への恐れが膨らんだ。',
+    patrolLife: '噂の出どころを探して、騎士団が貧民街を洗った。飢えを喰う使い魔が追い立てられた。',
+    harvest: '南の穀倉から豊作の報せが届いた。民の顔に、久しぶりの希望が戻った。',
+    march: '出征する兵の列が大通りを埋めた。見送る母親たちは、誰も笑っていない。',
+    conscript: '十五を過ぎた男子はすべて兵に取られることになった。街から若者の声が消えた。',
+    letterGood: '前線の部隊が敗走したという。次は自分の息子の番かと、民は震えた。',
+    letterBad: '休戦の報せが届いた。広場で、誰かが泣きながら笑っていた。',
+    peace: '和平の使者が都に入ったらしい。戦の恐れは、少しだけ遠のいた。',
+    plague: '下町で高熱に倒れる者が相次いだ。戸口に白い布が吊るされていく。',
+    quarantine: '東区が封鎖された。壁の向こうから、夜通し咳の音が聞こえる。',
+    healer: '異国の薬師が到着し、病人に薬を配りはじめた。人々は希望を取り戻しつつある。',
+    edict: '「魔女を匿う者も同罪とする」。布告が貼り出され、隣人が隣人を疑いはじめた。',
+    patrolWar: '聖堂騎士団が兵舎と港を見回った。戦の恐怖を喰う使い魔が狩り立てられた。',
+    patrolPlague: '騎士団が病人の家を一軒ずつ改めた。疫病の恐怖を喰う使い魔が狩り立てられた。',
+    patrolPower: '騎士団が牢と処刑台を清めた。罰への怯えを喰う使い魔が追われた。',
+    inquisition: '異端審問官が街に入った。あらゆる闇が照らされ、すべての使い魔が身を潜めた。',
+    founding: '建国祭の花火が夜空を彩った。民は歌い、誰も怯えていない。使い魔たちは飢えている。',
+    feast: '戦勝の祝宴が三日三晩続いた。要人たちは杯を重ね、警護の兵まで酔っている。',
+    amnesty: '皇帝の恩赦が下り、牢の扉が開かれた。罰を恐れる者はいなくなった。',
+    clinic: '帝国の金で施療院が建った。病を恐れていた民が、列をなして笑っている。',
+    bounty: '倉に収まりきらないほどの麦が実った。飢えという言葉を、民は忘れかけている。'
+  };
+  function changesHTML(ln) {
+    return ln.changes.map(c => {
+      const d = c.after == null ? null : c.after - c.before;
+      return `<span>${spName(c.sp)} ${fmt(c.before)}→${c.after == null ? '<span class="dn">' + c.gone + '</span>' : `${fmt(c.after)} <span class="${d >= 0 ? 'up' : 'dn'}">${d >= 0 ? '+' : '−'}${fmt(Math.abs(d))}</span>`}</span>`;
+    }).join('');
+  }
+  // 新月までの4夜を枠で表す：過ぎた夜にチェック、今夜は赤枠、最後の枠は新月
+  function moonBoxes(n, fresh) {
+    const N = E.P.moonEvery, pos = n != null ? n : (S.turn - 1) % N, fr = fresh != null ? fresh : pos - 1;
+    return Array.from({ length: N }, (_, i) => `<i class="${i < pos ? 'done' : ''} ${i === N - 1 ? 'moon' : ''}">${i < pos ? `<svg viewBox="0 0 12 12" aria-hidden="true"><path class="${i === fr ? 'fresh' : ''}" d="M2.2 6.4 L4.9 9 L9.8 3"/></svg>` : ''}</i>`).join('');
+  }
+  // 公開札だけで見た次の夜の見込み
+  function outlook(f) {
+    const sp = E.SPECIES[f.sp];
+    if (sp.bond) return `<span class="sub">目覚めまで${sp.bond.turns - (S.turn - f.born)}夜</span>`;
+    const pub = S.field.filter(c => c.public), hid = S.field.length - pub.length;
+    if (hid >= 4 || !pub.length) return '<span class="sub">見込み 不明</span>';
+    const outs = pub.flatMap(c => E.outcomes(c.key).map(o => E.cardEffectOn(o.key, f.sp, S.turn) - (sp.decay || 0)));
+    const lo = Math.min(...outs), hi = Math.max(...outs), avg = outs.reduce((a, b) => a + b, 0) / outs.length, eps = .02;
+    const q = hid >= 2 ? '？' : '';
+    let txt, cls;
+    if (lo > -eps && hi > eps) { txt = '↑' + (lvl(avg) || '小'); cls = 'up'; }
+    else if (hi < eps && lo < -eps) { txt = '↓' + (lvl(avg) || '小'); cls = 'dn'; }
+    else if (hi <= eps && lo >= -eps) { txt = '変化なし'; cls = ''; }
+    else { const sw = hi - lo; txt = `<small>不安定</small>${sw < .12 ? '小' : sw < .3 ? '中' : '大'}`; cls = 'unst'; }
+    return `<span class="sub">見込み</span> <b class="${cls}">${txt}${q}</b>`;
+  }
+  function render() {
+    const sym = E.symptom(S), moon = E.nightsToMoon(S), pay = E.nextPayment(S), short = pay - S.shards;
+    const warnCls = moon === 1 ? (short > 0 ? 'warn alarm' : 'warn') : moon === 2 ? 'warn' : '';
+    const eb = $('endTurn');
+    eb.classList.toggle('moon', moon === 1);
+    eb.textContent = moon === 1 ? (short > 0 ? `夜を越す（取立${pay}・欠片が足りない）` : `夜を越す（新月：取立${pay}）`) : '夜を越す';
+    const lnEl = $('lastNight');
+    if (lastNight) {
+      lnEl.hidden = false;
+      lnEl.innerHTML = `<div><span class="sub">昨夜 </span><span class="card">${esc(E.CARDS[lastNight.key].name)}</span><span class="eff">${lastNight.eff}</span></div>${lastNight.changes.length ? `<div class="chg">${changesHTML(lastNight)}</div>` : ''}`;
+    } else lnEl.hidden = true;
+    $('night').textContent = `第${S.turn}夜`;
+    $('stats').innerHTML = `
+      <div class="stat"><div class="k">手元の魂の欠片</div><div class="v num">${fmt(S.shards)}</div><div class="s num">魂の総量 ${fmt(E.netWorth(S))}</div></div>
+      <div class="stat ${moon === 1 && short <= 0 ? 'okpay' : warnCls}"><div class="k">${moon === 1 ? '今夜明けの取立' : '次の取立'}</div><div class="v num">${pay}</div><div class="s num">借り総額 ${S.debt}</div></div>
+      <div class="stat ${warnCls}"><div class="k">新月まで</div><div class="moonbox">${moonBoxes()}</div><div class="s">${short > 0 && moon === 1 ? `欠片が${fmt(short)}足りない` : moon === 1 ? '今夜明けに取立' : `あと${moon}夜`}</div></div>
+      <div class="stat"><div class="k">帝国の標的</div><div class="v num">${S.ruined}<span style="font-size:.7rem;color:var(--muted)"> / ${E.TARGETS.length}</span></div></div>`;
+    const hp = E.SYMPTOMS.length - sym.lv;
+    let marginTxt = '';
+    if (S.stats.borrowed > 0) marginTxt = `<span class="margin-warn num">維持率 ${Math.round(E.netWorth(S) / Math.max(1, S.debt) * 100)}%（${E.P.marginLine * 100}%割れで敗北）</span>`;
+    $('health').innerHTML = `<span class="pips ${hp <= 2 ? 'low' : ''}" aria-label="体力 ${hp}/5">${[0, 1, 2, 3, 4].map(i => `<i class="${i < hp ? 'on' : ''}"></i>`).join('')}</span><span>王女の体調：${sym.text}</span>${marginTxt}`;
+
+    const _anim = animateNew; setTimeout(() => { animateNew = false; }, 0);
+    $('omens').innerHTML = '<div class="om-row"><div class="om-corner">民の不安</div>' + E.SECTORS.map(k => `<div class="om-h s-${k}">${E.SECT_JP[k]}<small>${SECT_LONG[k]}</small></div>`).join('') + '</div>' + S.field.map(omenRow).join('');
+    const nPub = S.field.filter(c => c.public).length;
+    $('omenNote').textContent = `公開${nPub}・伏せ${S.field.length - nPub}　札をタップすると%を表示　騎＝騎士団の狩り`;
+
+    const rows = S.fams.map(f => {
+      const sp = E.SPECIES[f.sp], pl = f.value - f.invested;
+      const prev = f.history.length > 1 ? f.history[f.history.length - 2] : null, dv = prev == null ? null : f.value - prev;
+      const danger = f.value < f.invested * .55;
+      return `<button class="famrow ${danger ? 'danger' : ''}" data-fam="${f.id}">
+        <div style="min-width:0"><div class="nm">${spName(f.sp)}</div><div class="meta num">損益<span class="${pl >= 0 ? 'up' : 'dn'}">${pl >= 0 ? '+' : '−'}${fmt(Math.abs(pl))}</span></div></div>
+        <div class="aff famaff">${affinity(f.sp)}</div>
+        <div class="val num"><b>${fmt(f.value)}</b>${dv == null ? '<span class="sub">孵化</span>' : `<span class="${dv >= 0 ? 'up' : 'dn'}">昨夜${dv >= 0 ? '+' : '−'}${fmt(Math.abs(dv))}</span>`}</div>
+        <div class="famside"><div class="outlook">${outlook(f)}</div></div></button>`;
+    });
+    while (rows.length < E.P.slots) rows.push('<button class="famrow empty" data-open-drawer="1">空き枠　右の「卵」タブから使い魔を孵す ◀</button>');
+    $('fams').innerHTML = rows.join('');
+
+    const full = S.fams.length >= E.P.slots;
+    $('eggs').innerHTML = S.eggs.map((k, i) => {
+      const sp = E.SPECIES[k];
+      return `<button class="egg ${sp.basic ? '' : 'rare'}" data-hatch="${i}" ${full || S.shards < sp.fee + E.P.minFeed ? 'data-dim="1" style="opacity:.6"' : ''}>
+        <div class="top-l"><span class="nm">${spName(k)}</span><span class="fee num">${sp.basic ? '' : '珍・'}代価${sp.fee}</span></div>
+        <div class="aff">${affinity(k)}</div></button>`;
+    }).join('');
+
+    const next = E.TARGETS[S.ruined], price = Math.ceil(S.ruinPrice);
+    $('ruinBox').innerHTML = next ? `<div style="min-width:0"><div class="sub">次の標的（${S.ruined + 1}/${E.TARGETS.length}）</div><div class="who">${esc(next.name)}</div></div>
+      <div class="price num"><span class="sub" style="display:block;font-weight:400">代価</span>${price}</div>
+      <button class="btn primary" id="ruinBtn" ${S.ruinedThisTurn || S.shards < price ? 'disabled' : ''}>${S.ruinedThisTurn ? '今夜は済' : '破滅させる'}</button>` : '<div>帝国の要人は誰も残っていない。</div>';
+  }
+
+  // ---------- panels ----------
+  const layer = $('layer');
+  function close() { layer.innerHTML = ''; }
+  function panel(title, html) {
+    layer.innerHTML = `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+      <div class="sheet-head"><h3 id="pTitle">${title}</h3><button class="btn" id="pClose">閉じる</button></div>${html}</div></div>`;
+    $('pClose').onclick = close;
+    $('scrim').onclick = e => { if (e.target.id === 'scrim') close(); };
+  }
+  const PANELS = {
+    howto: () => ['遊び方', `<div class="rules"><p style="font-family:var(--f-display);color:var(--muted)">国が落ちた夜、幼い王女は悪魔と契約した。病に蝕まれた命が尽きる前に、帝国の要人5人をすべて破滅させれば復讐は成る。</p>
+      <ol><li>卵をタップして使い魔を孵し、魂の欠片を注ぐ。使い魔は帝国の民の恐怖を喰って太る</li>
+      <li>「夜を越す」と、帝国の気配の5つのうちどれかが起き、使い魔が太るか痩せる</li>
+      <li>使い魔をタップして回収し、増えた欠片で要人を破滅させる。新月ごとの悪魔の取り立ても忘れずに</li></ol>
+      <h3>民の不安（4種類）</h3><div class="legend">${E.SECTORS.map(k => `<div><b class="s-${k}">${E.SECT_JP[k]}</b>${esc(E.SECT_DESC[k])}</div>`).join('')}
+      <div><b class="dn">騎</b>騎士団の狩り。その恐怖を喰う使い魔が痩せる。影法師だけは逆に太る</div></div>
+      <h3>卵の相性の見かた</h3><p>◎◎ とても強く反応 ／ ◎ 強く ／ ○ ふつう ／ △ 少し ／ 逆 その恐怖が高まると痩せる</p></div>`],
+    targets: () => ['復讐の名簿', `<div class="targets">${E.TARGETS.map((t, i) => `<div class="target ${i < S.ruined ? 'done' : ''} ">
+      <span class="ix num">${i + 1}</span><div><div class="who">${esc(t.name)}</div><div class="why">${esc(t.title)}</div></div>
+      <span class="sub">${i < S.ruined ? '破滅' : ''}</span></div>`).join('')}</div>
+      <p class="sub">一夜に一人まで。破滅させるたび次の代価は8%上がる。騎士団が動いた夜や宴の夜は宮廷が手薄になり代価が下がる。</p>`],
+    ledger: () => ['悪魔の帳簿', `<div class="rules"><p>悪魔への借り <b class="num">${S.debt}</b>・次の新月の取り立て <b class="num">${E.nextPayment(S)}</b>（あと${E.nightsToMoon(S)}夜）</p>
+      <ul><li>新月ごとに利息${E.P.moonInterest * 100}%が付き、借りの${E.P.payRate * 100}%を取り立てられる</li>
+      <li>払えなければ不足分の半分が借りに上乗せされ、王女の命が2夜縮む</li>
+      <li>借りると借りた額の${E.P.borrowRate}倍が借りに加わり、命が${E.P.borrowShorten}夜縮む。一度でも借りると、魂の総量が借りの${E.P.marginLine * 100}%を割った時点で敗北</li></ul></div>
+      <button class="btn danger" id="borrowBtn">命を担保に借りる</button>`],
+    log: () => ['記録', `<div class="log">${S.log.slice().reverse().map(l => `<div class="${l.kind}"><b class="num">${l.t}夜</b>${esc(l.text)}</div>`).join('')}</div>`],
+    rules: () => ['ルールブック', rulesHTML()]
+  };
+  function rulesHTML() {
+    const rg = E.REGIME_KEYS;
+    const allCards = [...new Set(rg.flatMap(r => Object.keys(E.REGIMES[r].deck)))];
+    const tot = r => Object.values(E.REGIMES[r].deck).reduce((a, b) => a + b, 0);
+    const deckRows = allCards.map(k => `<tr><td>${esc(E.CARDS[k].name)}</td>${rg.map(r => `<td>${E.REGIMES[r].deck[k] ? Math.round(E.REGIMES[r].deck[k] / tot(r) * 100) + '%' : '–'}</td>`).join('')}<td style="text-align:left">${cardChips(k) || (E.CARDS[k].split ? E.CARDS[k].split.map(cardChips).join(' / ') : '')}</td></tr>`).join('');
+    const sens = E.SPECIES_KEYS.map(k => { const s = E.SPECIES[k]; return `<tr><td>${spName(k)}</td><td style="text-align:left">${esc(s.motif)}</td>${E.SECTORS.map(x => `<td class="s-${x}">${s.sens && s.sens[x] ? s.sens[x] : '–'}</td>`).join('')}<td>${s.fee}</td><td style="text-align:left">${cdesc(s.desc)}</td></tr>`; }).join('');
+    return `<div class="rules">
+      <h3>流れ</h3><ul><li>夜ごとに、使い魔を孵す・餌を与える・回収する・要人を破滅させる、を好きなだけ行い「夜を越す」。</li>
+      <li>夜を越すと、帝国の気配の5つのうちどれかがランダムに起き、使い魔の蓄えが増減する。引かれた札の代わりに山札から1枚補充される。</li>
+      <li>王女の命は20〜28夜目のどこかで尽きる（非公開）。体力の丸と容体が目安。それまでに5人の標的をすべて破滅させれば勝ち（その時点で勝利）。</li></ul>
+      <h3>情勢（非公開）と山札</h3>
+      <p>帝国には「重税・遠征・疫病・粛清・繁栄」の情勢があり、今の情勢の山札から補充される。情勢は毎夜${E.STAY * 100}%で続き、変わる時は残り4つに等分で移る。繁栄は帝国が幸福な時期で、民の恐怖が消えるので使い魔はみな痩せる（使い魔にとっての恐慌）。最初は重税。場の札は情勢が変わる前に入ったものも残る。</p>
+      <div class="tbl"><table><thead><tr><th>札</th>${rg.map(r => `<th>${E.REGIMES[r].name}</th>`).join('')}<th style="text-align:left">効果（序盤）</th></tr></thead><tbody>${deckRows}</tbody></table></div>
+      <p>札の効果は夜が進むほど大きくなる（序盤×1.0 → 25夜目×約2.0）。新しい札が公開で入る確率は序盤80%から終盤15%まで下がる。</p>
+      <h3>使い魔の種族</h3>
+      <p>蓄えの変化 = 札の各恐怖の値 × 種族の感応度 の合計。騎士団の札は、その恐怖を喰う種族に感応度（最大1）に応じて当たる。基本の4種はいつでも孵せる。蛾から下の5種は第5夜から、悪魔が毎夜1つだけ持ってくる。</p>
+      <div class="tbl"><table><thead><tr><th>種族</th><th style="text-align:left">モチーフ</th>${E.SECTORS.map(x => `<th class="s-${x}">${E.SECT_JP[x]}</th>`).join('')}<th>代価</th><th style="text-align:left">特徴</th></tr></thead><tbody>${sens}</tbody></table></div>
+      <h3>お金まわり</h3>
+      <ul><li>回収（売却）は一部でも全部でも可能。受け取りは5%目減りする。全部回収するとその使い魔は消え、枠が空く。使い魔は3体まで。</li>
+      <li>破滅の代価は毎夜およそ3%ずつ上がる（±5%のぶれ）。騎士団の札や、宴の札（建国祭・戦勝の祝宴）が起きた夜は2割下がる。</li>
+      <li>偵察：欠片${E.P.scoutCost}で伏せ札を1枚表にできる。</li></ul></div>`;
+  }
+  function openPanel(name) { const [t, h] = PANELS[name](); panel(t, h); }
+
+  // 使い魔の操作：＋で注ぎ込む、−で回収する（ひとつの操作）
+  function famPanel(id) {
+    const f = S.fams.find(x => x.id === id); if (!f) return;
+    const sp = E.SPECIES[f.sp], pl = f.value - f.invested;
+    const canFeed = !sp.bond ? Math.floor(S.shards) : 0;
+    const mx = E.maxNet(S, id), pay = E.nextPayment(S);
+    // 手元の枠の色：取り立て額に届けば緑、減るなら赤、届かず増えるだけなら白
+    const handCls = (to) => to >= pay ? 'meet' : to < S.shards ? 'lose' : 'plain';
+    const R = `手元の<br>魂の欠片<div class="lbl2">次の取立 ${pay}</div>`, L = `${esc(sp.name)}の<br>魂の欠片`;
+    sheet({ title: `${spName(f.sp)} <span class="tag">${esc(sp.motif)}</span> <span class="sub num" style="font-family:var(--f-body)">蓄え ${fmt(f.value)}・損益 <span class="${pl >= 0 ? 'up' : 'dn'}">${pl >= 0 ? '+' : '−'}${fmt(Math.abs(pl))}</span></span>`,
+      body: `<p class="sub" style="margin:0">${cdesc(sp.desc)}</p><div class="sub">気配の1〜5が起きた場合（%）</div>${minis(f, true)}`,
+      min: -mx, max: canFeed, value: 0, unit: '移動する数',
+      quick: [['全回収', () => -mx], ['半回収', () => -Math.floor(mx / 2)], ['0', () => 0], ['全て注ぐ', m => m]],
+      ok: v => v > 0 ? `魂の欠片を ${fmt(v)} 注ぎ込む` : v < 0 ? `魂の欠片を ${fmt(-v)} 回収する` : '',
+      danger: v => v < 0,
+      feedFill: v => v > 0,
+      big: v => {
+        if (v === 0) return xferHTML({ lLbl: R, lCur: S.shards, lCls: S.shards >= pay ? 'meet' : '', rLbl: L, rCur: f.value, dir: 'none', note: '−で手元へ<br>＋で使い魔へ' });
+        if (v > 0) return xferHTML({ lLbl: R, lCur: S.shards, lTo: S.shards - v, lCls: handCls(S.shards - v), rLbl: L, rCur: f.value, rTo: f.value + v, dir: 'right', amt: v, note: '注ぎ込む', color: 'var(--feed)' });
+        const p = E.withdrawPreview(S, id, -v); if (!p) return '';
+        const loss = p.realized < 0;
+        return xferHTML({ lLbl: R, lCur: S.shards, lTo: S.shards + p.get, lCls: handCls(S.shards + p.get), rLbl: L, rCur: f.value, rTo: p.left, dir: 'left', amt: p.get, color: 'var(--gain)',
+          note: `${esc(sp.name)}は<br>${fmt(p.cost)}減る<br>（目減り${Math.round(p.fee * 100)}%）`,
+          extra: `${p.all ? `<div class="note">${esc(sp.name)}は消え、枠が空く</div>` : ''}<div class="note">確定する損益 <span class="${loss ? 'dn' : 'up'}" style="font-weight:700">${p.realized >= 0 ? '+' : '−'}${fmt(Math.abs(p.realized))}</span>${loss ? '　<span class="dn">この損は、二度と取り戻せない。</span>' : ''}</div>` });
+      },
+      preview: v => v < 0 ? (sp.bond ? '蛇は満期前に起こすと2割減る' : '') : v > 0 ? '注いだ分だけ、育つ時も痩せる時も振れ幅が大きくなる' : (sp.bond ? '眠っている蛇には注ぎ込めない。回収はできる' : ''),
+      run: v => v > 0 ? E.feed(S, id, v) : E.withdraw(S, id, -v) });
+  }
+  function spark(hist, invested) {
+    const w = 200, h = 44, pad = 3, vals = hist.length > 1 ? hist : [hist[0], hist[0]];
+    const max = Math.max(invested, ...vals) * 1.05;
+    const x = i => pad + i * (w - 2 * pad) / (vals.length - 1), y = v => h - pad - v / max * (h - 2 * pad);
+    const last = vals[vals.length - 1], col = last >= invested ? 'var(--gain)' : 'var(--loss)';
+    return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+      <line x1="0" x2="${w}" y1="${y(invested)}" y2="${y(invested)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+      <polyline points="${vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+  }
+
+  function sheet(opts) {
+    const max = Math.max(opts.min, opts.max);
+    let v = Math.min(max, Math.max(opts.min, opts.value));
+    layer.innerHTML = `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle">
+      <h3 id="shTitle">${opts.title}</h3>${opts.body ? `<div class="sheet-desc">${opts.body}</div>` : ''}
+      <div class="bigline" id="big"></div>
+      <div class="stepper"><button class="btn" data-st="-10">−10</button><button class="btn" data-st="-1">−1</button>
+        <button class="amt amt-reset" id="amtV" type="button" aria-label="元に戻す"></button><button class="btn" data-st="1">+1</button><button class="btn" data-st="10">+10</button></div>
+      <div class="quick">${(opts.quick || [['最小', () => opts.min], ['1/4', m => Math.floor(m * .25)], ['半分', m => Math.floor(m * .5)], ['全部', m => m]]).map((q, i) => `<button class="btn" data-q="${i}">${q[0]}</button>`).join('')}</div>
+      <div class="preview" id="pv"></div><div class="err" id="shErr"></div>
+      <div class="row sheet-actions"><button class="btn" id="shCancel">やめる</button><button class="btn primary" id="shOk"></button></div></div></div>`;
+    const quick = opts.quick || [['最小', () => opts.min], ['1/4', m => Math.floor(m * .25)], ['半分', m => Math.floor(m * .5)], ['全部', m => m]];
+    const upd = () => {
+      $('amtV').innerHTML = `${v > 0 && opts.min < 0 ? '+' : v < 0 ? '−' : ''}${fmt(Math.abs(v))}<small>${v === opts.value ? (opts.unit || '魂の欠片') : '↺ 元に戻す'}</small>`;
+      $('amtV').classList.toggle('dirty', v !== opts.value);
+      $('big').innerHTML = opts.big(v); $('pv').innerHTML = opts.preview ? opts.preview(v) : ''; $('shErr').textContent = '';
+      const ok = typeof opts.ok === 'function' ? opts.ok(v) : opts.ok;
+      $('shOk').textContent = ok || '—'; $('shOk').disabled = !ok;
+      $('shOk').classList.toggle('danger-fill', !!opts.danger && opts.danger(v));
+      $('shOk').classList.toggle('feed-fill', !!opts.feedFill && opts.feedFill(v));
+    };
+    const set = x => { v = Math.round(Math.min(max, Math.max(opts.min, x)) * 10) / 10; upd(); };
+    layer.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const st = +b.dataset.st; set((st > 0 ? Math.floor(v + 1e-9) : Math.ceil(v - 1e-9)) + st); });
+    layer.querySelectorAll('[data-q]').forEach(b => b.onclick = () => set(quick[+b.dataset.q][1](max)));
+    $('amtV').onclick = () => set(opts.value);
+    $('shCancel').onclick = close;
+    $('scrim').onclick = e => { if (e.target.id === 'scrim') close(); };
+    $('shOk').onclick = () => { const r = opts.run(v); if (r && r.ok === false) $('shErr').textContent = r.msg; else { close(); render(); } };
+    upd();
+  }
+  // 左＝使い魔、右＝手元。dir: 'left'（手元→使い魔）| 'right'（使い魔→手元）| 'none'
+  function xferHTML(o) {
+    const side = (lbl, cur, to, cls) => `<div class="xside ${cls}"><div class="lbl">${lbl}</div><div class="big2">${fmt(to == null ? cur : to)}</div>${to == null ? '' : `<div class="was"><s>${fmt(cur)}</s><svg viewBox="0 0 24 14" aria-hidden="true"><path d="M2 12 Q 10 12 20 3"/><path d="M14 2.5 L20.5 2.5 L19 9"/></svg></div>`}</div>`;
+    const c = o.color || 'var(--brass)';
+    return `<div class="xfer">${side(o.lLbl, o.lCur, o.lTo, o.lCls != null ? o.lCls : (o.dir === 'left' ? 'gain' : o.dir === 'right' ? 'lose' : ''))}
+      <div class="xmid"><div class="amt" style="color:${o.dir === 'none' ? 'var(--muted)' : c}">${o.dir === 'none' ? '0' : fmt(o.amt)}</div><div class="track ${o.dir}" style="--c:${c}"><div class="rail"><span class="flow"></span></div></div><div class="note">${o.note || ''}</div></div>
+      ${side(o.rLbl, o.rCur, o.rTo, (o.dir === 'right' ? 'gain' : o.dir === 'left' ? 'lose' : '') + ' main')}</div>${o.extra ? `<div class="bigline" style="border:0;padding:0">${o.extra}</div>` : ''}`;
+  }
+  const bigNum = (lbl, from, to, note) => `<div class="lbl">${lbl}</div><div class="big">${fmt(from)}<small>→</small>${to}</div>${note ? `<div class="note">${note}</div>` : ''}`;
+  function openHatch(i) {
+    const k = S.eggs[i], sp = E.SPECIES[k], max = Math.floor(S.shards);
+    const full = S.fams.length >= E.P.slots, poor = S.shards < sp.fee + E.P.minFeed;
+    if (full || poor) {
+      const reason = full ? '使い魔は3体まで。孵すには、いずれかを全回収して枠を空ける。' : `孵すには魂の欠片が${sp.fee + E.P.minFeed}以上必要（手元 ${fmt(S.shards)}）。`;
+      const pub = S.field.map((c, j) => c.public ? `<span>${j + 1}</span><div class="cell">${barHTML({ v: expected(c.key, k) - (sp.decay || 0) }, true)}</div>` : '').join('');
+      panel(`${spName(k)} <span class="tag">${esc(sp.motif)}</span>`, `<p class="sub" style="margin:0">${cdesc(sp.desc)}</p><div class="aff">${affinity(k)}</div>
+        <p class="num" style="margin:0">孵す代価 ${sp.fee}（戻らない）</p>
+        ${pub ? `<div class="sub">今見えている気配が起きた場合（%）</div><div class="pct-list">${pub}</div>` : ''}
+        <p class="dn" style="margin:0">${reason}</p>`);
+      return;
+    }
+    sheet({ title: `${spName(k)}を孵す <span class="tag">${esc(sp.motif)}</span>`, body: `<p class="sub" style="margin:0">${cdesc(sp.desc)}</p><div class="aff">${affinity(k)}</div>`,
+      min: sp.fee + E.P.minFeed, max, value: sp.fee + E.P.minFeed, ok: '孵す', unit: '支払い', feedFill: () => true,
+      big: v => xferHTML({ lLbl: '手元の<br>魂の欠片', lCur: S.shards, lTo: S.shards - v, rLbl: `${esc(sp.name)}の<br>魂の欠片`, rCur: 0, rTo: v - sp.fee, dir: 'right', amt: v, note: `うち代価${sp.fee}は<br>戻らない`, color: 'var(--feed)' }),
+      run: v => E.hatch(S, i, v - sp.fee) });
+  }
+  function openBorrow() {
+    sheet({ title: '命を担保に借りる', body: `<p class="sub" style="margin:0">借りた額の${E.P.borrowRate}倍が借りに加わり、王女の命が${E.P.borrowShorten}夜縮む。借りの上限は${E.P.debtCap}。</p>`,
+      min: 1, max: Math.max(1, Math.floor((E.P.debtCap - S.debt) / E.P.borrowRate)), value: 5, ok: '借りる', unit: '借りる',
+      big: v => bigNum('悪魔への借り', S.debt, `<b class="dn">${S.debt + Math.ceil(v * E.P.borrowRate)}</b>`, `手元の魂の欠片 ${fmt(S.shards)} → ${fmt(S.shards + v)}`),
+      run: v => E.borrow(S, v) });
+  }
+  function doRuin() {
+    const t = E.TARGETS[S.ruined], r = E.ruin(S);
+    if (!r.ok) return;
+    layer.innerHTML = `<div class="scrim center"><div class="night-card"><div class="from">${esc(t.title)}</div><div class="drawn">${esc(t.name)}、破滅</div>
+      <div class="ev" style="text-align:center">${S.ruined >= E.TARGETS.length ? '復讐は成った。' : `残り${E.TARGETS.length - S.ruined}人。`}</div>
+      <button class="btn primary" id="ok">続ける</button></div></div>`;
+    $('ok').onclick = () => { close(); if (S.over) showEnd(); else render(); };
+  }
+  let busy = false;
+  function nightEnd() {
+    if (busy) return;
+    const before = S.fams.map(f => ({ id: f.id, sp: f.sp, before: f.value }));
+    const r = E.endTurn(S); if (!r.ok) return;
+    const rows = document.querySelectorAll(`#omens .om-row[data-row="${r.drawn.idx}"]`);
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (rows.length && !reduce) {
+      busy = true; $('endTurn').disabled = true;
+      const tbl = $('omens').getBoundingClientRect();
+      if (tbl.bottom < 0 || tbl.top > window.innerHeight) $('omens').scrollIntoView({ block: 'center' });
+      rows.forEach(el => el.classList.add('leave'));
+      setTimeout(() => { busy = false; $('endTurn').disabled = false; nightShow(r, before); }, 950);
+    } else nightShow(r, before);
+  }
+  function nightShow(r, before) {
+    newCardIdx = S.field.length - 1; animateNew = true;
+    const d = r.drawn;
+    const changes = before.map(b => {
+      const f = S.fams.find(x => x.id === b.id);
+      if (f) return { ...b, after: f.value };
+      const ev = r.events.find(e => e.text.startsWith(E.SPECIES[b.sp].name));
+      return { ...b, after: null, gone: '目覚めて欠片を返した' };
+    });
+    S.turn--; const eff = effectText(d.key); S.turn++;
+    lastNight = { key: d.key, eff, changes };
+    const extra = r.events.slice(1).filter(e => !before.some(b => e.text.startsWith(E.SPECIES[b.sp].name) && e.kind === 'bad'));
+    layer.innerHTML = `<div class="scrim center"><div class="night-card" role="dialog" aria-modal="true">
+      <div class="from">第${S.turn - 1}夜 ${d.wasPublic ? '見えていた札が起きた' : '伏せ札が起きた'}${d.from !== d.key ? `（${esc(E.CARDS[d.from].name)}）` : ''}</div>
+      <div class="drawn">${esc(E.CARDS[d.key].name)}</div>
+      ${FLAVOR[d.key] ? `<div class="flavor">${FLAVOR[d.key]}</div>` : ''}
+      <div style="text-align:center;font-size:1rem">${eff}</div>
+      ${changes.length ? `<div class="answers num">${changes.map(c => `<div>${changesHTML({ changes: [c] })}</div>`).join('')}</div>` : ''}
+      ${r.events.some(e => e.kind === 'moon' || /新月/.test(e.text)) ? `<div class="moonbox big">${moonBoxes(E.P.moonEvery, E.P.moonEvery - 1)}</div>` : ''}
+      ${extra.map(e => `<div class="ev ${e.kind}">${esc(e.text)}</div>`).join('')}
+      <button class="btn primary" id="ok">${S.over ? '結末へ' : '朝を迎える'}</button></div></div>`;
+    $('ok').onclick = () => { close(); if (S.over) showEnd(); else render(); };
+    $('ok').focus();
+  }
+  function omenPanel(i) {
+    const card = S.field[i]; if (!card || !card.public) return;
+    const c = E.CARDS[card.key];
+    const outs = c.split ? c.split : [card.key];
+    const block = k => { const sv = sectorVals(k); return `${c.split ? `<div class="sub">${esc(E.CARDS[k].name)}（半々）</div>` : ''}<div class="pct-list">${E.SECTORS.map(x => `<span class="s-${x}" style="font-family:var(--f-display);font-weight:700">${E.SECT_JP[x]}</span><div class="cell c-${x}">${barHTML(sv[x], true)}</div>`).join('')}</div>`; };
+    const fams = S.fams.filter(f => !E.SPECIES[f.sp].bond).map(f => `<span>${spName(f.sp)}</span><div class="cell">${barHTML({ v: expected(card.key, f.sp) - (E.SPECIES[f.sp].decay || 0) }, true)}</div>`).join('');
+    panel(`${i + 1}. ${esc(c.name)}`, `<div>${effectText(card.key)}</div>${outs.map(block).join('')}
+      ${fams ? `<div class="sub">この札が起きた時の使い魔の増減${c.split ? '（期待値）' : ''}</div><div class="pct-list">${fams}</div>` : ''}`);
+  }
+  function showEnd() {
+    render();
+    const res = S.result, st = S.stats;
+    const title = { win: '復讐は成った', perfect: '帝国は滅んだ', lose: '命が尽きた', margin: '魂を回収された' }[res];
+    const verdict = { win: '皇帝まで、ひとり残らず。王女は静かに目を閉じた。', perfect: '皇帝まで、ひとり残らず。', lose: `破滅させたのは${S.ruined}人。${E.TARGETS[S.ruined] ? esc(E.TARGETS[S.ruined].name) + 'は生き延びた。' : ''}`, margin: '借りた欠片に見合う蓄えが尽き、悪魔は契約を打ち切った。' }[res];
+    const lines = [`破滅させた標的：<b>${S.ruined} / ${E.TARGETS.length}人</b>`];
+    const held = S.fams.filter(f => f.value < f.invested);
+    if (held.length) lines.push(`<span class="hl">含み損のまま最後まで抱えた使い魔：${held.map(f => `${esc(E.SPECIES[f.sp].name)}（注ぎ込み${fmt(f.invested)}→${fmt(f.value)}）`).join('、')}</span>`);
+    const missed = S.fams.filter(f => f.peak > f.value + .5);
+    if (missed.length) lines.push(`最高値で回収していれば：${missed.map(f => `${esc(E.SPECIES[f.sp].name)} あと${fmt(f.peak - f.value)}`).join('、')}`);
+    lines.push(`自ら損を確定させて喰らった回数：${st.cutEarly}回`);
+    lines.push(`代価と目減りで悪魔に渡った欠片：${fmt(st.fees)}`);
+    if (st.borrowed) lines.push(`命を担保に借りた欠片：${st.borrowed}`);
+    if (st.latePays) lines.push(`<span class="hl">取り立てを払えなかった新月：${st.latePays}回（そのたび命が2夜縮んだ）</span>`);
+    lines.push(`使われずに残った欠片と使い魔：${fmt(st.leftover)}`);
+    const strip = S.regimeHistory.slice(0, S.turn - 1).map((r, i) => `<span class="rg-${r}" title="${i + 1}夜 ${E.REGIMES[r].name}">${E.REGIMES[r].name[0]}</span>`).join('');
+    layer.innerHTML = `<div class="scrim center"><div class="night-card end" role="dialog" aria-modal="true">
+      <h3>${title}</h3><div class="verdict">${verdict}</div>
+      <div class="answers">${lines.map(l => `<div>${l}</div>`).join('')}</div>
+      <div><div class="sub" style="margin-bottom:4px">本当の情勢の移り変わり（1夜目から）</div><div class="regime-strip">${strip}</div>
+      <div class="sub" style="margin-top:4px">重＝重税　遠＝遠征　疫＝疫病　粛＝粛清　繁＝繁栄</div></div>
+      <button class="btn primary" id="again">もう一度、契約する</button></div></div>`;
+    $('again').onclick = () => { S = E.newGame(); newCardIdx = -1; lastNight = null; close(); render(); window.scrollTo(0, 0); };
+  }
+
+  document.addEventListener('click', e => {
+    const om = e.target.closest('[data-omen]');
+    if (om && !e.target.closest('button:not(.famrow)') && !om.closest('.famrow')) { omenPanel(+om.dataset.omen); return; }
+    const t = e.target.closest('button'); if (!t || t.disabled) return;
+    if (t.dataset.hatch != null) openHatch(+t.dataset.hatch);
+    else if (t.dataset.fam != null) famPanel(+t.dataset.fam);
+    else if (t.dataset.scout != null) { E.scout(S, +t.dataset.scout); render(); }
+    else if (t.dataset.panel != null) openPanel(t.dataset.panel);
+    else if (t.dataset.openDrawer) setDrawer('drawer', true);
+    else if (t.id === 'ruinBtn') doRuin();
+    else if (t.id === 'borrowBtn') openBorrow();
+    else if (t.id === 'endTurn') { if (!S.over) nightEnd(); else showEnd(); }
+  });
+  function setDrawer(id, open) {
+    document.querySelectorAll('.drawer').forEach(d => {
+      const o = d.id === id ? open : false;
+      d.classList.toggle('open', o); d.querySelector('.drawer-tab').setAttribute('aria-expanded', o);
+    });
+    document.body.classList.toggle('drawer-on', !!open);
+
+  }
+  let tabLock = 0;
+  document.querySelectorAll('.drawer-tab').forEach(t => t.onclick = e => {
+    e.stopPropagation();
+    if (Date.now() < tabLock) return;   // 連打・ゴーストタップで別のタブが開かないように
+    tabLock = Date.now() + 450;
+    setDrawer(t.dataset.drawer, !$(t.dataset.drawer).classList.contains('open'));
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && layer.innerHTML && !S.over) close(); });
+
+  render();
+  openPanel('howto');
+})();
+</script>
+
+</body>
+</html>
