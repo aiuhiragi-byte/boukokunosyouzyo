@@ -348,6 +348,14 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
 @media (max-height:650px) { .art-scene { height:120px; } .night-card { gap:8px; padding:12px; } }
 
 .intro-screen { background: var(--ink); }
+.lesson { max-height:96dvh; }
+.lesson-flavor { color:var(--muted); font-family:var(--f-display); font-size:.88rem; line-height:1.7; margin:0; }
+.practice-drawer { position:relative; padding-top:42px; }
+.practice-tab { position:absolute; right:0; top:0; background:var(--brass); color:var(--ink); }
+.practice-drawer .drawer-body { width:100%; box-sizing:border-box; border:1px solid var(--brass); border-radius:10px 0 10px 10px; padding:10px; }
+.practice-comparison { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+.practice-drawer .egg[aria-pressed="true"] { outline:2px solid var(--brass); }
+.lesson .famrow { cursor:default; }
 .lesson progress { width:100%; height:5px; accent-color:var(--brass); flex-shrink:0; }
 .lesson-copy { font-size:.94rem; line-height:1.8; margin:0; }
 .lesson-result { border-left:2px solid var(--brass); padding:8px 10px; margin:0; background:var(--panel2); font-size:.85rem; }
@@ -912,8 +920,8 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     if (c.exo) { const t = c.exo.target === 'all' ? '全' : E.SECT_JP[c.exo.target]; return `<span class="chip dn">騎士団 ${t}${pct(c.exo.e * (c.exo.target === 'all' ? .6 : 1))}</span>`; }
     return '';
   }
-  function sectorVals(key) {
-    const c = E.CARDS[key], m = E.lateMult(S.turn), out = {};
+  function sectorVals(key, state = S) {
+    const c = E.CARDS[key], m = E.lateMult(state.turn), out = {};
     if (c.fx) for (const k in c.fx) out[k] = { v: c.fx[k] * (c.fx[k] > 0 ? E.P.boom : 1) * m };
     if (c.exo) { const ts = c.exo.target === 'all' ? E.SECTORS : [c.exo.target]; for (const k of ts) out[k] = { v: c.exo.e * m * (c.exo.target === 'all' ? .6 : 1), k: true }; }
     return out;
@@ -934,14 +942,14 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     if (c.exo) return c.exo.target === 'all' ? '<span class="dn">騎士団がすべての使い魔を狩る（中）</span>' : `<span class="dn">騎士団が</span><span class="s-${c.exo.target}">${E.SECT_JP[c.exo.target]}</span><span class="dn">の使い魔を狩る（大）</span>`;
     return '';
   }
-  function omenRow(card, i) {
+  function omenRow(card, i, state = S) {
     const nw = i === newCardIdx ? '<span class="new">新</span>' : '';
     const band = i % 2 === 0 ? 'band-a' : 'band-b';
     const rowCls = `om-row ${band}${i === newCardIdx && animateNew ? ' enter' : ''}`;
     if (!card.public) return `<div class="${rowCls}" data-row="${i}"><div class="om-name hid">${nw}<div class="nm"><span class="ix">${i + 1}</span>伏せ札</div></div>
       <div class="om-hid"><span>中身は今の情勢の山札しだい</span><button class="btn" data-scout="${i}" ${S.shards < E.P.scoutCost ? 'disabled' : ''}>偵察 ${E.P.scoutCost}</button></div></div>`;
     const c = E.CARDS[card.key];
-    const parts = c.split ? c.split.map(sectorVals) : [sectorVals(card.key)];
+    const parts = c.split ? c.split.map(k => sectorVals(k, state)) : [sectorVals(card.key, state)];
     const sub = c.split ? '<small>半々で上か下</small>' : '';
     return `<div class="${rowCls}" data-row="${i}"><div class="om-name ${E.isExo(card.key) ? 'exo' : ''}" data-omen="${i}">${nw}<div class="nm"><span class="ix">${i + 1}</span>${esc(c.name)}</div>${sub}</div>` +
       E.SECTORS.map(k => `<div class="cell" data-omen="${i}">${parts.map(p => barHTML(p[k])).join('')}</div>`).join('') + '</div>';
@@ -1034,7 +1042,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     $('health').innerHTML = `<span class="pips ${hp <= 2 ? 'low' : ''}" aria-label="体力 ${hp}/5">${[0, 1, 2, 3, 4].map(i => `<i class="${i < hp ? 'on' : ''}"></i>`).join('')}</span><span>王女の体調：${sym.text}</span>${marginTxt}`;
 
     const _anim = animateNew; setTimeout(() => { animateNew = false; }, 0);
-    $('omens').innerHTML = '<div class="om-row"><div class="om-corner">民の不安</div>' + E.SECTORS.map(k => `<div class="om-h s-${k}">${E.SECT_JP[k]}<small>${SECT_LONG[k]}</small></div>`).join('') + '</div>' + S.field.map(omenRow).join('');
+    $('omens').innerHTML = '<div class="om-row"><div class="om-corner">民の不安</div>' + E.SECTORS.map(k => `<div class="om-h s-${k}">${E.SECT_JP[k]}<small>${SECT_LONG[k]}</small></div>`).join('') + '</div>' + S.field.map((card, i) => omenRow(card, i)).join('');
     const nPub = S.field.filter(c => c.public).length;
     $('omenNote').textContent = `公開${nPub}・伏せ${S.field.length - nPub}　札をタップすると%を表示　騎＝騎士団の狩り`;
 
@@ -1099,7 +1107,8 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
   function startTutorial(resume = false) {
     opening = false; lockGame(true); setDrawer('drawer', false);
     const state = E.newGame(17); state.eggs = ['crow', 'locust'];
-    tutorial = { state, step: 0, resume, note: '', error: '' };
+    tutorial = { state, step: 0, resume, eggsOpen: false, selected: null, detail: null, note: '', error: '' };
+    practiceField(['march', 'grain']);
     drawLesson();
   }
   function practiceField(keys) {
@@ -1125,32 +1134,36 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     if (action === 'borrow') { r = E.borrow(s, 2); if (r.ok) t.note = '魂を2受け取り、悪魔への借りは3増え、命は2夜縮みました。借りるのは任意です。'; }
     if (action === 'decline') t.note = '命を削って借りる必要はありません。必要な時だけ選べます。';
     if (!r.ok) { t.error = r.msg; drawLesson(); return; }
-    t.error = ''; t.step++; drawLesson();
+    t.error = ''; t.step++; t.selected = null; t.eggsOpen = false; t.detail = null;
+    if (action === 'night') {
+      const key = r.drawn.key;
+      layer.innerHTML = `<div class="scrim intro-screen center"><div class="night-card" role="dialog" aria-modal="true" aria-labelledby="practiceNightTitle"><div class="from">導入編 第${s.turn - 1}夜</div><h3 id="practiceNightTitle">${E.CARDS[key].name}</h3>${art(key)}<div class="flavor">${FLAVOR[key] || ''}</div><p class="lesson-result">${t.note}</p><button class="btn primary" id="practiceMorning">朝を迎える</button></div></div>`;
+      $('practiceMorning').onclick = drawLesson; $('practiceMorning').focus();
+    } else drawLesson();
   }
   function drawLesson() {
     const t = tutorial, s = t.state, step = t.step;
     const btn = (label, action, value = '') => `<button class="btn primary" data-lesson-action="${action}" data-value="${value}">${label}</button>`;
     let title, text, actions = '', cards = '';
     if (step === 0) {
-      title = '1. 使い魔を孵す'; text = 'まずは2種類だけ。鴉は戦、蝗は飢えの気配で育ちます。どちらかに魂を6注ぎましょう。孵す代価は別に必要です。';
-      actions = s.eggs.map((k, i) => `<button class="btn lesson-egg" data-lesson-action="hatch" data-value="${i}">${art(k, 'mini')}<span>${E.SPECIES[k].name}<small>代価${E.SPECIES[k].fee} ＋ 蓄え6</small></span></button>`).join('');
+      title = '1. 気配を見て、使い魔を選ぶ'; text = '帝国の民の不安が、使い魔の餌になります。まず気配を見てください。「↑大」は不安が大きく増える印。「◀ 卵」を開き、鴉と蝗のどちらに餌が多そうか見比べましょう。';
     } else if (step === 1) {
-      practiceField(['march', 'grain']); title = '2. どちらの気配が起きる？'; text = '今は公開された2枚だけ。夜を越すと、どちらか1枚が同じ確率で起きます。自分で札を選ぶのではありません。'; actions = btn('夜を越して確かめる', 'night');
+      practiceField(['march', 'grain']); title = '2. どちらの気配が起きる？'; text = '選んだ使い魔の相性と、気配の「大・小」をもう一度見比べましょう。今は公開された2枚だけ。夜を越すと、どちらか1枚が同じ確率で起きます。自分で札を選ぶのではありません。'; actions = btn('夜を越す', 'night');
     } else if (step === 2) {
       title = '3. 魂を注いで育てる'; text = '気配に応じて蓄えが増えました。さらに3注いでみましょう。注いだ分だけ、育つ時も痩せる時も変化が大きくなります。'; actions = btn('手元から3注ぐ', 'feed');
     } else if (step === 3) {
-      practiceField(['march', 'grain', 'harvest']); title = '4. 気配が3枚に'; text = '気配が1枚増えました。豊作は飢えを鎮めるので、蝗は痩せます。どの札が起きるかで結果が違います。'; actions = btn('次の夜へ', 'night');
+      practiceField(['march', 'grain', 'harvest']); title = '4. 気配が3枚に'; text = '気配が1枚増えました。豊作は飢えを鎮めるので、蝗は痩せます。どの札が起きるかで結果が違います。'; actions = btn('夜を越す', 'night');
     } else if (step === 4) {
       title = '5. 蓄えを手元へ戻す'; text = '使い魔の蓄えは、そのままでは復讐や取り立てに使えません。全部回収してみましょう。5%が失われ、使い魔は消えます。'; actions = btn(`全部回収する（受け取り${fmt(E.recoverPreview(s, s.fams[0].id, s.fams[0].value).get)}）`, 'recover');
     } else if (step === 5) {
       title = '6. 最初の復讐'; text = `手元の魂を${Math.ceil(s.ruinPrice)}使い、占領地総督を破滅させます。使い魔を育てるのは、この復讐のためです。`; actions = btn('占領地総督を破滅させる', 'ruin');
     } else if (step === 6) {
-      practiceField(['grain', 'sleepless', 'harvest']); title = '7. 新月への備え'; text = `あと${E.nightsToMoon(s)}夜で、悪魔が魂を取り立てに来ます。次の取り立ては${E.nextPayment(s)}。手元に残しておく必要があります。`; actions = btn('一夜進める', 'night');
+      practiceField(['grain', 'sleepless', 'harvest']); title = '7. 新月への備え'; text = `あと${E.nightsToMoon(s)}夜で、悪魔が魂を取り立てに来ます。次の取り立ては${E.nextPayment(s)}。手元に残しておく必要があります。`; actions = btn('夜を越す', 'night');
     } else if (step === 7) {
-      practiceField(['grain', 'sleepless', 'harvest']); title = '8. 今夜は新月'; text = `手元${fmt(s.shards)}から${E.nextPayment(s)}を払います。新月ごとに借りが8%増え、その後に取り立て。足りないと借りが増え、命が2夜縮みます。`; actions = btn('新月を迎える', 'night');
+      practiceField(['grain', 'sleepless', 'harvest']); title = '8. 今夜は新月'; text = `手元${fmt(s.shards)}から${E.nextPayment(s)}を払います。新月ごとに借りが8%増え、その後に取り立て。足りないと借りが増え、命が2夜縮みます。`; actions = btn('夜を越す（新月）', 'night');
     } else if (step === 8) {
       s.eggs = ['rat', 'shadow']; title = '9. 新しい卵を解放'; text = '鼠は疫で大きく育ち、影法師は騎士団が動くと育ちます。ここで基本の4種類がそろいました。どちらかを孵して、種族の違いを覚えましょう。';
-      actions = s.eggs.map((k, i) => `<button class="btn lesson-egg" data-lesson-action="hatch" data-value="${i}">${art(k, 'mini')}<span>${E.SPECIES[k].name}<small>代価${E.SPECIES[k].fee} ＋ 蓄え1</small></span></button>`).join('');
+
     } else if (step === 9) {
       practiceField(['grain', 'plague', 'patrolWar', 'peace', 'edict']); title = '10. 5枚の気配と偵察'; text = '本編と同じ5枚になりました。本編では使い魔を3体まで育てられます。伏せ札は中身が見えません。欠片2で偵察してみましょう。騎士団の札は使い魔を狩るため、特に注意が必要です。'; actions = btn('伏せ札を偵察する（欠片2）', 'scout');
     } else if (step === 10) {
@@ -1159,10 +1172,35 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
       title = '導入編を終えて'; text = '本編では気配5枚、使い魔は最大3体、基本の卵4種類から始まります。第5夜から珍しい卵が加わります。今の情勢は隠されていて、夜ごとに変わることがあります。';
       actions = `<p class="sub">${t.resume ? '練習前の本編に戻ります。練習の結果は持ち越しません。' : '練習はここまで。本編は第1夜・手元30・悪魔への借り30から、命も含めて新しく始まります。'}</p><button class="btn primary" id="lessonFinish">${t.resume ? '本編に戻る' : '本編を始める'}</button>`;
     }
-    if ([1,3,6,7,9,10].includes(step)) cards = `<div class="lesson-cards">${s.field.map(c => `<div class="lesson-card">${c.public ? `${art(c.key, 'mini')}<b>${E.CARDS[c.key].name}</b>${s.fams.map(f => { const change = E.cardEffectOn(c.key, f.sp, s.turn) * 100; return `<small>${E.SPECIES[f.sp].name} ${change >= 0 ? '+' : '−'}${Math.abs(change).toFixed(0)}%</small>`; }).join('')}` : '<b>伏せ札</b><small>まだ中身は不明</small>'}</div>`).join('')}</div>`;
-    layer.innerHTML = `<div class="scrim intro-screen"><div class="sheet lesson" role="dialog" aria-modal="true" aria-labelledby="lessonTitle"><div class="sheet-head"><span class="sub">導入編 · ${Math.min(step + 1, 12)} / 12</span><button class="btn" id="lessonSkip">${t.resume ? '練習をやめて戻る' : '導入編を飛ばす'}</button></div><progress max="12" value="${step + 1}" aria-label="導入編の進み具合"></progress><h3 id="lessonTitle" tabindex="-1">${title}</h3><p class="lesson-copy">${text}</p>
+    if ([0,1,3,6,7,8,9,10].includes(step)) {
+      cards = `<h3>帝国の気配</h3><div class="omtable"><div class="om-row"><div class="om-corner">民の不安 ▸</div>${E.SECTORS.map(k => `<div class="om-h s-${k}">${E.SECT_JP[k]}<small>${SECT_LONG[k]}</small></div>`).join('')}</div>${s.field.map((c,i) => omenRow(c,i,s).replaceAll('data-omen=', 'data-practice-omen=').replace(/<button[^>]*data-scout[^>]*>.*?<\/button>/g, '<span>偵察 2</span>')).join('')}</div><p class="sub">${s.field.length}枚のうち1枚が同じ確率で起きます。札の名前をタップすると街の様子を読めます。</p>`;
+      if (t.detail != null && s.field[t.detail]?.public) { const key = s.field[t.detail].key; cards += `<div class="lesson-result"><b>${E.CARDS[key].name}</b><p class="flavor">${FLAVOR[key] || ''}</p></div>`; }
+    }
+    const preview = k => s.field.map((c,i) => c.public ? `<span>${i + 1}: ${arrowLv(E.cardEffectOn(c.key,k,s.turn))}</span>` : `<span>${i + 1}: ？</span>`).join('　');
+    if (s.fams.length) cards += `<h3>使い魔</h3>${s.fams.map(f => `<div class="famrow"><div class="fam-identity">${art(f.sp,'mini')}<div class="nm">${spName(f.sp)}</div></div><div class="aff famaff">${affinity(f.sp)}</div><div class="val num"><b>${fmt(f.value)}</b></div><div class="sub">札ごとの見込み<br>${preview(f.sp)}</div></div>`).join('')}`;
+    if (step === 0 || step === 8) {
+      cards += `<section class="practice-drawer ${t.eggsOpen ? 'open' : ''}"><button class="btn practice-tab" id="practiceEggTab" aria-expanded="${t.eggsOpen}" aria-controls="practiceEggs">${t.eggsOpen ? '▶' : '◀'} 卵</button>${t.eggsOpen ? `<div class="drawer-body" id="practiceEggs"><h3>卵 <span class="sub">色は喰う恐怖</span></h3><div class="eggs">${s.eggs.map((k,i) => `<button class="egg" data-practice-egg="${i}" aria-pressed="${t.selected === i}">${art(k,'mini')}<div class="top-l"><span class="nm">${spName(k)}</span><span class="fee num">代価${E.SPECIES[k].fee}</span></div><div class="aff">${affinity(k)}</div></button>`).join('')}</div><p class="sub">◎◎ とても強く反応 ／ ◎ 強く ／ ○ ふつう ／ △ 少し</p><div class="practice-comparison">${s.eggs.map(k=>`<div><b>${spName(k)}</b><div class="sub">${preview(k)}</div></div>`).join('')}</div>${t.selected != null ? `<p>${E.SPECIES[s.eggs[t.selected]].desc}</p>${btn(`${E.SPECIES[s.eggs[t.selected]].name}を孵す（代価${E.SPECIES[s.eggs[t.selected]].fee} ＋ 魂${step === 0 ? 6 : 1}）`,'hatch',t.selected)}` : '<p class="sub">気配の番号と見込みを比べ、卵をタップして選んでください。</p>'}</div>` : ''}</section>`;
+    }
+    const whispers = [
+      '「あの街の怯えが見えるか。小さな影たちは、それを喰らって育つ」悪魔が王女の耳元で囁いた。',
+      'マントの陰で、小さな使い魔が身じろぎした。王女は街の灯りと、その影を交互に見つめる。',
+      '「まだ育てるか？」王女の掌で、魂の欠片がかすかに熱を帯びた。',
+      '飢えを鎮める報せも、王女には救いとは限らない。使い魔の影が、細く揺れた。',
+      '「蓄えを手元に戻せ。復讐に使うのは、お前の掌にある魂だ」',
+      '占領地総督の窓には、今夜も明かりがある。王女は震える指を握りしめた。',
+      '月が細くなる。悪魔は何も言わず、王女の掌を見つめている。',
+      '月のない空に、二つの目だけが浮かんだ。「契約の刻だ」',
+      '悪魔が新しい卵を置いた。殻の向こうで、別の飢えが息づいている。',
+      '街から届く噂には、まだ顔の見えないものがある。王女は闇に耳を澄ませた。',
+      '「足りなければ、貸してやろう。代わりに、お前の残りの夜を少し」',
+      '王女はマントを握り直した。闇の向こうに、帝国の灯りが続いている。'
+    ];
+    layer.innerHTML = `<div class="scrim intro-screen"><div class="sheet lesson" role="dialog" aria-modal="true" aria-labelledby="lessonTitle"><div class="sheet-head"><span class="sub">導入編 · ${Math.min(step + 1, 12)} / 12</span><button class="btn" id="lessonSkip">${t.resume ? '練習をやめて戻る' : '導入編を飛ばす'}</button></div><progress max="12" value="${step + 1}" aria-label="導入編の進み具合"></progress><h3 id="lessonTitle" tabindex="-1">${title}</h3><p class="lesson-copy">${text}</p><p class="flavor lesson-flavor">${whispers[step]}</p>
       ${t.note ? `<p class="lesson-result" role="status">${t.note}</p>` : ''}<div class="lesson-stats"><span>練習 第${s.turn}夜</span><span>手元 ${fmt(s.shards)}</span>${s.fams.map(f => `<span>${E.SPECIES[f.sp].name}の蓄え ${fmt(f.value)}</span>`).join('')}${step >= 6 ? `<span>次の取立 ${E.nextPayment(s)}</span>` : ''}</div>${cards}<div class="lesson-actions">${actions}</div>${t.error ? `<p role="alert">${esc(t.error)}</p>` : ''}<p class="sub">練習専用です。本編の命・魂・復讐の結果には影響しません。</p></div></div>`;
     $('lessonSkip').onclick = finishIntro;
+    if ($('practiceEggTab')) $('practiceEggTab').onclick = () => { t.eggsOpen = !t.eggsOpen; drawLesson(); $('practiceEggTab').focus(); };
+    layer.querySelectorAll('[data-practice-egg]').forEach(b => b.onclick = () => { t.selected = +b.dataset.practiceEgg; drawLesson(); layer.querySelector(`[data-practice-egg="${t.selected}"]`).focus(); });
+    layer.querySelectorAll('[data-practice-omen]').forEach(b => { b.tabIndex = 0; b.setAttribute('role','button'); const reveal = () => { t.detail = +b.dataset.practiceOmen; drawLesson(); }; b.onclick = reveal; b.onkeydown = e => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); reveal(); } }; });
     if ($('lessonFinish')) $('lessonFinish').onclick = finishIntro;
     layer.querySelectorAll('[data-lesson-action]').forEach(b => b.onclick = () => lessonAction(b.dataset.lessonAction, b.dataset.value));
     $('lessonTitle').focus();
