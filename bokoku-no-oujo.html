@@ -358,6 +358,20 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
 .tutorial-playing[data-lesson="0"] #fams, .tutorial-playing[data-lesson="0"] #drawer { display:none; }
 .tutorial-playing:not([data-lesson="6"]) #drawerRuin { display:none; }
 .tutorial-playing[data-lesson="0"] .stats, .tutorial-playing[data-lesson="1"] .stats { display:none; }
+/* Raised controls are distinct from the flat, read-only soul totals. */
+.btn:not(:disabled), .egg:not(:disabled), button.famrow:not(:disabled), .amt-reset.dirty {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.13), 0 3px 0 rgba(0,0,0,.65), 0 5px 9px rgba(0,0,0,.24);
+  transition: box-shadow .12s ease, translate .12s ease;
+}
+.btn:not(:disabled):active, .egg:not(:disabled):active, button.famrow:not(:disabled):active, .amt-reset.dirty:active {
+  translate: 0 2px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.3), 0 1px 0 rgba(0,0,0,.65);
+}
+button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
+.btn:disabled { box-shadow:none; }
+.stepper .btn { border-color:#655b70; }
+.xside { box-shadow:none; }
+@media (prefers-reduced-motion:reduce) { .btn, .egg, button.famrow, .amt-reset { transition:none !important; } }
 </style>
 </head>
 <body>
@@ -1102,7 +1116,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     $('introLearn').focus();
   }
   const LESSONS = [
-    ['帝国の気配', '帝国の民の不安が、使い魔の餌になります。戦・疫・飢・罰は、不安の種類。「↑大」は大きく増え、「↑小」は少し増える印です。今夜は下の2枚のどちらかが起きます。札をタップすると詳しく読めます。', '「街を見よ。戦を恐れる者、飢えを恐れる者。その怯えを喰らうものがいる」'],
+    ['帝国の気配', '帝国の民の不安が、使い魔の餌になります。戦・疫・飢・罰は、不安の種類。「↑大」は大きく増え、「↑小」は少し増える印です。今夜は表示された2枚のどちらかが起きます。札をタップすると詳しく読めます。', '「街を見よ。戦を恐れる者、飢えを恐れる者。その怯えを喰らうものがいる」'],
     ['卵を開いて、使い魔を選ぶ', '右の「◀ 卵」を開いてください。鴉は戦、蝗は飢えに強く反応します。気配と相性を見比べて卵を選び、＋1で魂を6まで増やして「孵す」を押しましょう。支払いには代価も含まれます。', '悪魔が二つの卵を置いた。殻の奥で、小さな影が街のざわめきに耳を澄ませている。'],
     ['気配と使い魔を見比べる', '気配の「大・小」と、使い魔の相性・見込みを見比べましょう。使い魔をタップすると札ごとの変化も確認できます。準備ができたら、下の「夜を越す」を押してください。', '王女は街の灯りと、足元の小さな影を交互に見つめた。どちらの不安が、今夜の餌になるのだろう。'],
     ['魂を注ぐ', '使い魔をタップし、＋1を3回押して魂を3注ぎましょう。左右の数と矢印が、手元から使い魔への移動を示します。', '「まだ育てるか？」王女の掌で、魂の欠片がかすかに熱を帯びた。'],
@@ -1127,7 +1141,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
   }
   function advanceLesson() {
     setDrawer('drawer',false); close(); tutorial.step++; drawLesson();
-    if([1,9].includes(tutorial.step)) window.scrollTo(0,0); else $('tutorialCoach').scrollIntoView({block:'start'});
+    window.scrollTo(0,0);
   }
   function drawLesson() {
     const t=tutorial, step=t.step;
@@ -1140,7 +1154,7 @@ body.drawer-on .drawer:not(.open) .drawer-tab { pointer-events: none !important;
     render();
     let coach=$('tutorialCoach');
     if(!coach) {coach=document.createElement('section');coach.id='tutorialCoach';document.querySelector('.sticky-top').after(coach);}
-    if([1,9].includes(step)) $('omens').parentElement.after(coach); else document.querySelector('.sticky-top').after(coach);
+    if([3,5].includes(step)) $('fams').parentElement.after(coach); else $('omens').parentElement.after(coach);
     const [title,text,flavor]=LESSONS[step];
     coach.innerHTML=`<div class="sheet-head"><span class="sub">チュートリアル ${step+1} / ${LESSONS.length}</span><button class="btn" id="lessonSkip">${t.resume?'練習をやめて戻る':'説明を飛ばす'}</button></div><h2>${title}</h2><p>${text}</p><p class="flavor">${flavor}</p>${step===0?'<button class="btn primary" id="lessonNext">卵の説明へ</button>':step===11?'<button class="btn" id="lessonNext">借りずに進む</button>':step===12?`<button class="btn primary" id="lessonFinish">${t.resume?'本編に戻る':'本編を始める'}</button>`:''}<p class="sub">練習専用。本編の命・魂には影響しません。</p>`;
     $('lessonSkip').onclick=finishIntro;
