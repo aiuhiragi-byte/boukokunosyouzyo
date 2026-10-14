@@ -379,6 +379,15 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
 .tutorial-playing[data-lesson="1"] #familiarSection { display:none; }
 .tutorial-playing:not([data-lesson="2"]):not([data-lesson="4"]):not([data-lesson="7"]):not([data-lesson="8"]) .dock { display:none; }
 .tutorial-playing[data-lesson="0"] #omenNote { display:none; }
+/* Read-only totals stay flat; tutorial ink follows the actual control. */
+.xside, .xside.main, .xside.meet { border:0; background:transparent; box-shadow:none; }
+.tutorial-target { position:relative; }
+.tutorial-target::after {
+  content:""; position:absolute; inset:-4px -3px; z-index:4; pointer-events:none;
+  border:3px solid #e34747; border-radius:48% 53% 46% 51% / 53% 43% 56% 47%;
+  transform:rotate(-2deg); box-shadow:0 0 0 1px rgba(227,71,71,.12);
+}
+.tutorial-target:focus-visible { outline-offset:7px; }
 </style>
 </head>
 <body>
@@ -1129,7 +1138,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     ['気配と使い魔を見比べる', '気配の「大・小」と、使い魔の相性・見込みを見比べましょう。使い魔をタップすると札ごとの変化も確認できます。準備ができたら、下の「夜を越す」を押してください。', '王女は街の灯りと、足元の小さな影を交互に見つめた。どちらの不安が、今夜の餌になるのだろう。'],
     ['魂を注ぐ', '使い魔をタップし、＋1を3回押して魂を3注ぎましょう。左右の数と矢印が、手元から使い魔への移動を示します。', '「まだ育てるか？」王女の掌で、魂の欠片がかすかに熱を帯びた。'],
     ['気配が3枚に', '豊作の報せは飢えを鎮め、蝗を痩せさせます。気配と使い魔を確認して「夜を越す」を押しましょう。', '民にとっての救いが、使い魔には飢えになる。王女は明るくなった街を黙って見つめた。'],
-    ['魂を手元に戻す', '使い魔をタップして「全回収」を選び、左右の数を確認して回収してください。本編でも同じ操作です。一部だけ戻す時は−1・−10で調整できます。回収時は5%が失われます。', '「復讐に使うのは、お前の掌にある魂だ。影に預けたままでは届かぬ」'],
+    ['魂を手元に戻す', '赤丸の使い魔をタップして「全回収」を選び、左右の数を確認して回収してください。本編でも同じ操作です。一部だけ戻す時は−1・−10で調整できます。回収時は5%が失われます。', '「復讐に使うのは、お前の掌にある魂だ。影に預けたままでは届かぬ」'],
     ['最初の復讐', '右の「◀ 破滅」を開き、標的と代価を確認して「破滅させる」を押しましょう。一夜に一人までです。', '占領地総督の窓には、今夜も明かりがある。王女は震える指を握りしめた。'],
     ['新月に備える', '上の「新月まで」と「次の取立」を確認しましょう。取り立てには手元の魂が必要です。「夜を越す」で進めます。', '月が細くなる。悪魔は何も言わず、王女の掌を見つめている。'],
     ['今夜は新月', '今夜は取り立てです。借りが8%増えた後に支払います。手元が足りないと借りが増え、命が2夜縮みます。「夜を越す」で確かめましょう。', '月のない空に、二つの目だけが浮かんだ。「契約の刻だ」'],
@@ -1168,7 +1177,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     if(!nav){nav=document.createElement('div');nav.id='tutorialNav';document.querySelector('.wrap').prepend(nav);}
     nav.innerHTML=`<button class="btn" id="lessonSkip">説明を飛ばす</button>`;
     const summary = step===0 ? '<p class="lesson-summary">今夜の出来事の候補と、不安の変化です。</p>' : '';
-    const detail = step===0 ? '戦・疫・飢・罰は、不安の種類です。「↑大」は大きく増え、「↑小」は少し増える印。今夜は2枚のどちらかが同じ確率で起きます。民の不安は使い魔の餌になります。札をタップすると詳しく確認できます。' : text;
+    const detail = step===0 ? '戦・疫・飢・罰は、不安の種類です。「↑大」は大きく増え、「↑小」は少し増える印。今夜は2枚のどちらかが同じ確率で起きます。民の不安は使い魔の餌になります。赤丸の札名をタップすると詳しく確認できます。' : text;
     coach.innerHTML=`<span class="sub">チュートリアル ${step+1} / ${LESSONS.length}</span><h2>${title}</h2>${summary}<p>${detail}</p><div class="lesson-actions">${step===1?'<button class="btn" id="lessonBack">戻る</button>':''}${step===0||step===11?'<button class="btn primary" id="lessonNext">次へ</button>':step===12?`<button class="btn primary" id="lessonFinish">${t.resume?'戻る':'本編を始める'}</button>`:''}</div>`;
     if($('lessonBack')) $('lessonBack').onclick=()=>{setDrawer('drawer',false);tutorial.step=0;drawLesson();window.scrollTo(0,0);};
     $('lessonSkip').onclick=finishIntro;
@@ -1183,6 +1192,37 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     document.querySelectorAll('.drawer-tab').forEach(b=>b.disabled=b.dataset.drawer==='drawer'?![1,9].includes(step):step!==6);
     document.querySelectorAll('[data-panel]').forEach(b=>b.disabled=!(step===11&&b.dataset.panel==='ledger'));
   }
+  function markTutorialTargets() {
+    document.querySelectorAll('.tutorial-target').forEach(el=>el.classList.remove('tutorial-target'));
+    if(!tutorial) return;
+    const mark = selector => document.querySelectorAll(selector).forEach(el=>{if(!el.disabled) el.classList.add('tutorial-target');});
+    const step=tutorial.step;
+    if(layer.innerHTML) {
+      if($('shOk')) {
+        if(![1,3,5,9,11].includes(step)){mark('#shCancel');return;}
+        const value=+$('shOk').dataset.value, goal=+$('shOk').dataset.goal;
+        if(value===goal) mark('#shOk');
+        else if(step===5) mark('[data-q="0"]');
+        else mark(value<goal ? '[data-st="1"]' : '[data-st="-1"]');
+      } else if($('borrowBtn')) mark('#borrowBtn');
+      else if($('ok')) mark('#ok');
+      else if($('pClose')) mark('#pClose');
+      return;
+    }
+    if(step===0) mark('#omens .om-name[data-omen]');
+    else if([1,9].includes(step)) mark($('drawer').classList.contains('open') ? '#eggs [data-hatch]' : '[data-drawer="drawer"]');
+    else if([3,5].includes(step)) mark('#fams [data-fam]');
+    else if([2,4,7,8].includes(step)) mark('#endTurn');
+    else if(step===6) mark($('drawerRuin').classList.contains('open') ? '#ruinBtn' : '[data-drawer="drawerRuin"]');
+    else if(step===10) mark('[data-scout]');
+    else if(step===11) mark('[data-panel="ledger"]');
+    else mark('#lessonFinish');
+  }
+  let tutorialMarkFrame=0;
+  new MutationObserver(()=>{
+    if(tutorialMarkFrame)cancelAnimationFrame(tutorialMarkFrame);
+    tutorialMarkFrame=requestAnimationFrame(markTutorialTargets);
+  }).observe(document.body,{childList:true,subtree:true});
   function tutorialSheetError(v, opts) {
     const step=tutorial.step;
     if(step===1 && v!==opts.min+5) return '今回は＋1で魂を6にして孵しましょう（支払いは代価＋6）。';
@@ -1286,6 +1326,8 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       $('amtV').classList.toggle('dirty', v !== opts.value);
       $('big').innerHTML = opts.big(v); $('pv').innerHTML = opts.preview ? opts.preview(v) : ''; $('shErr').textContent = '';
       const ok = typeof opts.ok === 'function' ? opts.ok(v) : opts.ok;
+      $('shOk').dataset.value=v;
+      $('shOk').dataset.goal=tutorial ? ({1:opts.min+5,3:3,5:opts.min,9:opts.min,11:2}[tutorial.step] ?? v) : v;
       $('shOk').textContent = ok || '—'; $('shOk').disabled = !ok;
       $('shOk').classList.toggle('danger-fill', !!opts.danger && opts.danger(v));
       $('shOk').classList.toggle('feed-fill', !!opts.feedFill && opts.feedFill(v));
@@ -1434,6 +1476,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       d.classList.toggle('open', o); d.querySelector('.drawer-tab').setAttribute('aria-expanded', o);
     });
     document.body.classList.toggle('drawer-on', !!open);
+    markTutorialTargets();
 
   }
   let tabLock = 0;
