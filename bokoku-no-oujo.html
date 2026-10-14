@@ -372,6 +372,13 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
 .stepper .btn { border-color:#655b70; }
 .xside { box-shadow:none; }
 @media (prefers-reduced-motion:reduce) { .btn, .egg, button.famrow, .amt-reset { transition:none !important; } }
+#tutorialNav { display:flex; justify-content:flex-end; padding:8px 0; }
+#tutorialCoach .lesson-summary { color:var(--brass); font-weight:600; }
+.tutorial-playing #health { display:none; }
+.tutorial-playing[data-lesson="0"] #familiarSection,
+.tutorial-playing[data-lesson="1"] #familiarSection { display:none; }
+.tutorial-playing:not([data-lesson="2"]):not([data-lesson="4"]):not([data-lesson="7"]):not([data-lesson="8"]) .dock { display:none; }
+.tutorial-playing[data-lesson="0"] #omenNote { display:none; }
 </style>
 </head>
 <body>
@@ -394,7 +401,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     <div class="omen-note" id="omenNote"></div>
   </section>
 
-  <section>
+  <section id="familiarSection">
     <h2>使い魔 <small>タップで餌・回収。3体まで</small></h2>
     <div class="famlist" id="fams"></div>
   </section>
@@ -1097,6 +1104,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     tutorial=null;opening=false;lockGame(false);
     document.body.classList.remove('tutorial-playing'); delete document.body.dataset.lesson;
     if($('tutorialCoach')) $('tutorialCoach').remove();
+    if($('tutorialNav')) $('tutorialNav').remove();
     if(old && old.resume) { S=old.saved.state; lastNight=old.saved.lastNight;newCardIdx=old.saved.newCardIdx;animateNew=old.saved.animateNew; }
     else {S=E.newGame();lastNight=null;newCardIdx=-1;animateNew=false;}
     setDrawer('drawer',false); close();
@@ -1155,8 +1163,14 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     let coach=$('tutorialCoach');
     if(!coach) {coach=document.createElement('section');coach.id='tutorialCoach';document.querySelector('.sticky-top').after(coach);}
     if([3,5].includes(step)) $('fams').parentElement.after(coach); else $('omens').parentElement.after(coach);
-    const [title,text,flavor]=LESSONS[step];
-    coach.innerHTML=`<div class="sheet-head"><span class="sub">チュートリアル ${step+1} / ${LESSONS.length}</span><button class="btn" id="lessonSkip">${t.resume?'練習をやめて戻る':'説明を飛ばす'}</button></div><h2>${title}</h2><p>${text}</p><p class="flavor">${flavor}</p>${step===0?'<button class="btn primary" id="lessonNext">卵の説明へ</button>':step===11?'<button class="btn" id="lessonNext">借りずに進む</button>':step===12?`<button class="btn primary" id="lessonFinish">${t.resume?'本編に戻る':'本編を始める'}</button>`:''}<p class="sub">練習専用。本編の命・魂には影響しません。</p>`;
+    const [title,text]=LESSONS[step];
+    let nav=$('tutorialNav');
+    if(!nav){nav=document.createElement('div');nav.id='tutorialNav';document.querySelector('.wrap').prepend(nav);}
+    nav.innerHTML=`<button class="btn" id="lessonSkip">説明を飛ばす</button>`;
+    const summary = step===0 ? '<p class="lesson-summary">今夜の出来事の候補と、不安の変化です。</p>' : '';
+    const detail = step===0 ? '戦・疫・飢・罰は、不安の種類です。「↑大」は大きく増え、「↑小」は少し増える印。今夜は2枚のどちらかが同じ確率で起きます。民の不安は使い魔の餌になります。札をタップすると詳しく確認できます。' : text;
+    coach.innerHTML=`<span class="sub">チュートリアル ${step+1} / ${LESSONS.length}</span><h2>${title}</h2>${summary}<p>${detail}</p><div class="lesson-actions">${step===1?'<button class="btn" id="lessonBack">戻る</button>':''}${step===0||step===11?'<button class="btn primary" id="lessonNext">次へ</button>':step===12?`<button class="btn primary" id="lessonFinish">${t.resume?'戻る':'本編を始める'}</button>`:''}</div>`;
+    if($('lessonBack')) $('lessonBack').onclick=()=>{setDrawer('drawer',false);tutorial.step=0;drawLesson();window.scrollTo(0,0);};
     $('lessonSkip').onclick=finishIntro;
     if($('lessonNext')) $('lessonNext').onclick=advanceLesson;
     if($('lessonFinish')) $('lessonFinish').onclick=finishIntro;
@@ -1358,7 +1372,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       <div class="from">第${S.turn - 1}夜 ${d.wasPublic ? '見えていた札が起きた' : '伏せ札が起きた'}${d.from !== d.key ? `（${esc(E.CARDS[d.from].name)}）` : ''}</div>
       <div class="drawn">${esc(E.CARDS[d.key].name)}</div>
       ${art(d.key)}
-      ${FLAVOR[d.key] ? `<div class="flavor">${FLAVOR[d.key]}</div>` : ''}
+      ${!tutorial && FLAVOR[d.key] ? `<div class="flavor">${FLAVOR[d.key]}</div>` : ''}
       <div style="text-align:center;font-size:1rem">${eff}</div>
       ${changes.length ? `<div class="answers num">${changes.map(c => `<div>${changesHTML({ changes: [c] })}</div>`).join('')}</div>` : ''}
       ${r.events.some(e => e.kind === 'moon' || /新月/.test(e.text)) ? `<div class="moonbox big">${moonBoxes(E.P.moonEvery, E.P.moonEvery - 1)}</div>` : ''}
@@ -1373,7 +1387,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     const outs = c.split ? c.split : [card.key];
     const block = k => { const sv = sectorVals(k); return `${c.split ? `<div class="sub">${esc(E.CARDS[k].name)}（半々）</div>` : ''}<div class="pct-list">${E.SECTORS.map(x => `<span class="s-${x}" style="font-family:var(--f-display);font-weight:700">${E.SECT_JP[x]}</span><div class="cell c-${x}">${barHTML(sv[x], true)}</div>`).join('')}</div>`; };
     const fams = S.fams.filter(f => !E.SPECIES[f.sp].bond).map(f => `<span>${spName(f.sp)}</span><div class="cell">${barHTML({ v: expected(card.key, f.sp) - (E.SPECIES[f.sp].decay || 0) }, true)}</div>`).join('');
-    panel(`${i + 1}. ${esc(c.name)}`, `${art(card.key)}${FLAVOR[card.key] ? `<p class="flavor">${FLAVOR[card.key]}</p>` : ''}<div>${effectText(card.key)}</div>${outs.map(block).join('')}
+    panel(`${i + 1}. ${esc(c.name)}`, `${art(card.key)}${!tutorial && FLAVOR[card.key] ? `<p class="flavor">${FLAVOR[card.key]}</p>` : ''}<div>${effectText(card.key)}</div>${outs.map(block).join('')}
       ${fams ? `<div class="sub">この札が起きた時の使い魔の増減${c.split ? '（期待値）' : ''}</div><div class="pct-list">${fams}</div>` : ''}`);
   }
   function showEnd() {
