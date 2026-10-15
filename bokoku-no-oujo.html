@@ -387,6 +387,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
   border:3px solid #e34747; border-radius:48% 53% 46% 51% / 53% 43% 56% 47%;
   transform:rotate(-2deg); box-shadow:0 0 0 1px rgba(227,71,71,.12);
 }
+.om-row.tutorial-target::after { border-color:rgba(227,71,71,.55); box-shadow:none; transform:rotate(-.5deg); }
 .tutorial-target:focus-visible { outline-offset:7px; }
 </style>
 </head>
@@ -1177,7 +1178,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     if(!nav){nav=document.createElement('div');nav.id='tutorialNav';document.querySelector('.wrap').prepend(nav);}
     nav.innerHTML=`<button class="btn" id="lessonSkip">説明を飛ばす</button>`;
     const summary = step===0 ? '<p class="lesson-summary">今夜の出来事の候補と、不安の変化です。</p>' : '';
-    const detail = step===0 ? '戦・疫・飢・罰は、不安の種類です。「↑大」は大きく増え、「↑小」は少し増える印。今夜は2枚のどちらかが同じ確率で起きます。民の不安は使い魔の餌になります。赤丸の札名をタップすると詳しく確認できます。' : text;
+    const detail = step===0 ? '戦・疫・飢・罰は、不安の種類です。「↑大」は大きく増え、「↑小」は少し増える印。今夜は2枚のどちらかが同じ確率で起きます。民の不安は使い魔の餌になります。赤丸で囲んだ札をタップすると詳しく確認できます。' : text;
     coach.innerHTML=`<span class="sub">チュートリアル ${step+1} / ${LESSONS.length}</span><h2>${title}</h2>${summary}<p>${detail}</p><div class="lesson-actions">${step===1?'<button class="btn" id="lessonBack">戻る</button>':''}${step===0||step===11?'<button class="btn primary" id="lessonNext">次へ</button>':step===12?`<button class="btn primary" id="lessonFinish">${t.resume?'戻る':'本編を始める'}</button>`:''}</div>`;
     if($('lessonBack')) $('lessonBack').onclick=()=>{setDrawer('drawer',false);tutorial.step=0;drawLesson();window.scrollTo(0,0);};
     $('lessonSkip').onclick=finishIntro;
@@ -1209,7 +1210,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       else if($('pClose')) mark('#pClose');
       return;
     }
-    if(step===0) mark('#omens .om-name[data-omen]');
+    if(step===0) mark('#omens .om-row[data-row]');
     else if([1,9].includes(step)) mark($('drawer').classList.contains('open') ? '#eggs [data-hatch]' : '[data-drawer="drawer"]');
     else if([3,5].includes(step)) mark('#fams [data-fam]');
     else if([2,4,7,8].includes(step)) mark('#endTurn');
