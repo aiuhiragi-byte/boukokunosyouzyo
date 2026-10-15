@@ -389,6 +389,38 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
 }
 .om-row.tutorial-target::after { border-color:rgba(227,71,71,.55); box-shadow:none; transform:rotate(-.5deg); }
 .tutorial-target:focus-visible { outline-offset:7px; }
+/* Brief, non-blocking feedback for growth caused by the night's event. */
+.soul-results { display:grid; gap:4px; flex-shrink:0; }
+.soul-result { display:grid; grid-template-columns:76px minmax(0,1fr) auto; align-items:center; gap:6px; min-height:72px; --soul-color:var(--brass); }
+.soul-result.loss { --soul-color:var(--loss); }
+.soul-result.still { --soul-color:var(--muted); }
+.soul-figure { position:relative; width:76px; height:72px; isolation:isolate; pointer-events:none; }
+.soul-figure .art-mini { width:76px; height:72px; transform-origin:50% 72%; }
+.soul-caption { font-family:var(--f-display); font-weight:700; }
+.soul-caption small { display:block; color:var(--muted); font-family:var(--f-body); font-size:.68rem; font-weight:400; }
+.soul-numbers { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.soul-numbers b { font-size:1.3rem; display:inline-block; min-width:2.5ch; }
+.soul-numbers small { display:block; color:var(--soul-color); font-size:.8rem; }
+.soul-result.gain .soul-numbers b { color:var(--gain); }
+.soul-result.loss .soul-numbers b { color:var(--loss); }
+.soul-mote { position:absolute; top:50%; left:50%; width:4px; height:4px; border-radius:50%; background:var(--soul-color); box-shadow:0 0 5px var(--soul-color); opacity:0; animation: soul-gather var(--duration) ease-out var(--delay) both; }
+.loss .soul-mote { animation-name:soul-scatter; }
+.gain .soul-figure .art-mini { animation:soul-grow var(--duration) ease-out both; }
+.loss .soul-figure .art-mini { animation:soul-shrink var(--duration) ease-out both; }
+.soul-float { position:absolute; top:14px; left:0; width:100%; text-align:center; color:var(--soul-color); font-size:.9rem; font-weight:800; text-shadow:0 1px 3px var(--ink); opacity:0; animation:soul-rise var(--duration) ease-out both; }
+.loss .soul-float { animation-name:soul-sink; }
+.night-card:has(.soul-results) > .art-scene { height:120px; flex-shrink:0; }
+@keyframes soul-gather { 0% { transform:translate(var(--dx),var(--dy)) scale(.5); opacity:0; } 25% { opacity:.85; } 78% { opacity:.6; } 100% { transform:translate(0,0) scale(.2); opacity:0; } }
+@keyframes soul-scatter { 0% { transform:translate(0,0) scale(.6); opacity:0; } 20% { opacity:.75; } 100% { transform:translate(var(--dx),var(--dy)) scale(.2); opacity:0; } }
+@keyframes soul-grow { 0%,100% { transform:scale(1); } 45% { transform:translateY(-3px) scale(var(--swell)); filter:drop-shadow(0 0 5px var(--brass)); } 75% { transform:scale(.97,1.03); } }
+@keyframes soul-shrink { 0%,100% { transform:scale(1); opacity:1; } 48% { transform:translateY(3px) scale(var(--shrink)); opacity:.45; } }
+@keyframes soul-rise { 0% { transform:translateY(9px); opacity:0; } 24%,65% { opacity:1; } 100% { transform:translateY(-16px); opacity:0; } }
+@keyframes soul-sink { 0% { transform:translateY(-8px); opacity:0; } 24%,65% { opacity:1; } 100% { transform:translateY(20px); opacity:0; } }
+@media (prefers-reduced-motion:reduce) {
+  .soul-result .soul-figure .art-mini { animation:none; }
+  .soul-mote, .soul-float { display:none; animation:none; }
+}
+
 </style>
 </head>
 <body>
@@ -1399,6 +1431,44 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       setTimeout(() => { busy = false; $('endTurn').disabled = false; nightShow(r, before); }, 950);
     } else nightShow(r, before);
   }
+  // Presentation only: use resolved nightly values, never alter the engine state.
+  function soulReaction(c) {
+    if(c.after == null) return `<div class="soul-result still"><div class="soul-figure">${art(c.sp,'mini')}</div><div>${spName(c.sp)}<div class="sub">${esc(c.gone)}</div></div></div>`;
+    const delta=Math.round((c.after-c.before)*10)/10;
+    const direction=delta>0?'gain':delta<0?'loss':'still';
+    const strong=Math.abs(delta)/Math.max(1,c.before)>=.3;
+    const duration=strong?1000:780;
+    const sign=delta>0?'+':delta<0?'−':'';
+    const amount=sign+fmt(Math.abs(delta));
+    const particles=delta===0?'':Array.from({length:strong?10:5},(_,i)=>{
+      const angle=i*2.39996;
+      return `<i class="soul-mote" style="--dx:${Math.round(Math.cos(angle)*34)}px;--dy:${Math.round(Math.sin(angle)*27)}px;--delay:${i*15}ms"></i>`;
+    }).join('');
+    const description=`${E.SPECIES[c.sp].name}、蓄え${fmt(c.before)}から${fmt(c.after)}、${delta===0?'変化なし':amount}`;
+    return `<div class="soul-result ${direction}${strong?' strong':''}" style="--duration:${duration}ms;--swell:${strong?1.22:1.12};--shrink:${strong?.77:.9}" role="group" aria-label="${esc(description)}">
+      <div class="soul-figure" aria-hidden="true">${particles}${art(c.sp,'mini')}${delta===0?'':`<span class="soul-float">${amount}</span>`}</div>
+      <div class="soul-caption" aria-hidden="true">${spName(c.sp)}<small>${delta>0?(strong?'大きく育った':'育った'):delta<0?(strong?'大きく痩せた':'痩せた'):'変化なし'}</small></div>
+      <div class="soul-numbers" aria-hidden="true"><span class="sub">${fmt(c.before)} → </span><b data-soul-from="${c.before}" data-soul-to="${c.after}" data-soul-duration="${duration}">${fmt(c.after)}</b><small>${amount}</small></div></div>`;
+  }
+  function animateSoulNumbers() {
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const counters=[...layer.querySelectorAll('[data-soul-to]')].filter(el=>el.dataset.soulFrom!==el.dataset.soulTo);
+    if(!counters.length) return;
+    const start=performance.now();
+    counters.forEach(el=>{el.firstChild.nodeValue=fmt(+el.dataset.soulFrom);});
+    const tick=now=>{
+      let pending=false;
+      for(const el of counters) {
+        if(!el.isConnected) continue;
+        const progress=Math.min(1,(now-start)/+el.dataset.soulDuration);
+        const from=+el.dataset.soulFrom,to=+el.dataset.soulTo;
+        el.firstChild.nodeValue=fmt(progress===1?to:from+(to-from)*(1-Math.pow(1-progress,3)));
+        pending ||= progress<1;
+      }
+      if(pending) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
   function nightShow(r, before) {
     newCardIdx = S.field.length - 1; animateNew = true;
     const d = r.drawn;
@@ -1406,7 +1476,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       const f = S.fams.find(x => x.id === b.id);
       if (f) return { ...b, after: f.value };
       const ev = r.events.find(e => e.text.startsWith(E.SPECIES[b.sp].name));
-      return { ...b, after: null, gone: '目覚めて欠片を返した' };
+      return { ...b, after: null, gone: ev ? ev.text : '使い魔は姿を消した' };
     });
     S.turn--; const eff = effectText(d.key); S.turn++;
     lastNight = { key: d.key, eff, changes };
@@ -1414,15 +1484,16 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     layer.innerHTML = `<div class="scrim center"><div class="night-card" role="dialog" aria-modal="true">
       <div class="from">第${S.turn - 1}夜 ${d.wasPublic ? '見えていた札が起きた' : '情報統制されていた出来事が起きた'}${d.from !== d.key ? `（${esc(E.CARDS[d.from].name)}）` : ''}</div>
       <div class="drawn">${esc(E.CARDS[d.key].name)}</div>
+      ${changes.length ? `<div class="soul-results">${changes.map(soulReaction).join('')}</div>` : ''}
       ${art(d.key)}
       ${!tutorial && FLAVOR[d.key] ? `<div class="flavor">${FLAVOR[d.key]}</div>` : ''}
       <div style="text-align:center;font-size:1rem">${eff}</div>
-      ${changes.length ? `<div class="answers num">${changes.map(c => `<div>${changesHTML({ changes: [c] })}</div>`).join('')}</div>` : ''}
       ${r.events.some(e => e.kind === 'moon' || /新月/.test(e.text)) ? `<div class="moonbox big">${moonBoxes(E.P.moonEvery, E.P.moonEvery - 1)}</div>` : ''}
       ${extra.map(e => `<div class="ev ${e.kind}">${esc(e.text)}</div>`).join('')}
       <button class="btn primary" id="ok">${S.over ? '結末へ' : '朝を迎える'}</button></div></div>`;
     $('ok').onclick = () => { if(tutorial){advanceLesson();return;} close(); if (S.over) showEnd(); else render(); };
-    $('ok').focus();
+    animateSoulNumbers();
+    $('ok').focus({preventScroll:true});
   }
   function omenPanel(i) {
     const card = S.field[i]; if (!card || !card.public) return;
