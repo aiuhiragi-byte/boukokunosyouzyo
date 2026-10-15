@@ -780,7 +780,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     if (c.public) return err('すでに見えています');
     if (s.shards < P.scoutCost) return err('欠片が足りません');
     s.shards -= P.scoutCost; c.public = true; c.scouted = true;
-    s.log.push({ t: s.turn, kind: 'act', text: `偵察で伏せ札を覗いた：${CARDS[c.key].name}` });
+    s.log.push({ t: s.turn, kind: 'act', text: `偵察で情報統制の内側を探った：${CARDS[c.key].name}` });
     return { ok: true };
   }
 
@@ -794,7 +794,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     const c0 = CARDS[key];
     if (c0.split) key = c0.split[s.rng() < .5 ? 0 : 1];
     s.lastDraw = { from: drawn.key, key, wasPublic: drawn.public, idx };
-    ev.push({ kind: isExo(key) ? 'bad' : 'card', text: `${drawn.public ? '' : '伏せ札が開いた：'}${CARDS[drawn.key].name}${key !== drawn.key ? ` → ${CARDS[key].name}` : ''}` });
+    ev.push({ kind: isExo(key) ? 'bad' : 'card', text: `${drawn.public ? '' : '情報統制されていた出来事：'}${CARDS[drawn.key].name}${key !== drawn.key ? ` → ${CARDS[key].name}` : ''}` });
 
     // 使い魔の変動
     for (const f of [...s.fams]) {
@@ -966,8 +966,8 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     const nw = i === newCardIdx ? '<span class="new">新</span>' : '';
     const band = i % 2 === 0 ? 'band-a' : 'band-b';
     const rowCls = `om-row ${band}${i === newCardIdx && animateNew ? ' enter' : ''}`;
-    if (!card.public) return `<div class="${rowCls}" data-row="${i}"><div class="om-name hid">${nw}<div class="nm"><span class="ix">${i + 1}</span>伏せ札</div></div>
-      <div class="om-hid"><span>中身は今の情勢の山札しだい</span><button class="btn" data-scout="${i}" ${S.shards < E.P.scoutCost ? 'disabled' : ''}>偵察 ${E.P.scoutCost}</button></div></div>`;
+    if (!card.public) return `<div class="${rowCls}" data-row="${i}"><div class="om-name hid">${nw}<div class="nm"><span class="ix">${i + 1}</span>情報統制</div></div>
+      <div class="om-hid"><span>検閲済み</span><button class="btn" data-scout="${i}" ${S.shards < E.P.scoutCost ? 'disabled' : ''}>偵察 ${E.P.scoutCost}</button></div></div>`;
     const c = E.CARDS[card.key];
     const parts = c.split ? c.split.map(k => sectorVals(k, state)) : [sectorVals(card.key, state)];
     const sub = c.split ? '<small>半々で上か下</small>' : '';
@@ -1064,7 +1064,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     const _anim = animateNew; setTimeout(() => { animateNew = false; }, 0);
     $('omens').innerHTML = '<div class="om-row"><div class="om-corner">民の不安</div>' + E.SECTORS.map(k => `<div class="om-h s-${k}">${E.SECT_JP[k]}<small>${SECT_LONG[k]}</small></div>`).join('') + '</div>' + S.field.map((card, i) => omenRow(card, i)).join('');
     const nPub = S.field.filter(c => c.public).length;
-    $('omenNote').textContent = `公開${nPub}・伏せ${S.field.length - nPub}　札をタップすると%を表示　騎＝騎士団の狩り`;
+    $('omenNote').textContent = `公開${nPub}・情報統制${S.field.length - nPub}　札をタップすると%を表示　騎＝騎士団の狩り`;
 
     const rows = S.fams.map(f => {
       const sp = E.SPECIES[f.sp], pl = f.value - f.invested;
@@ -1143,7 +1143,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     ['新月に備える', '上の「新月まで」と「次の取立」を確認しましょう。取り立てには手元の魂が必要です。「夜を越す」で進めます。', '月が細くなる。悪魔は何も言わず、王女の掌を見つめている。'],
     ['今夜は新月', '今夜は取り立てです。借りが8%増えた後に支払います。手元が足りないと借りが増え、命が2夜縮みます。「夜を越す」で確かめましょう。', '月のない空に、二つの目だけが浮かんだ。「契約の刻だ」'],
     ['新しい卵', '「◀ 卵」から鼠か影法師を選びましょう。今回は最小の魂1で孵します。鼠は疫、影法師は騎士団の動きに反応します。', '悪魔が新しい卵を置いた。殻の向こうで、別の飢えが息づいている。'],
-    ['伏せ札を偵察する', '気配が本編と同じ5枚になりました。伏せ札の「偵察 2」を押して中身を見ましょう。手元の魂を2使います。', '街から届く噂には、まだ顔の見えないものがある。王女は闇に耳を澄ませた。'],
+    ['情報統制の内側を探る', '気配が本編と同じ5枚になりました。情報統制の「偵察 2」を押して中身を見ましょう。手元の魂を2使います。', '街から届く噂には、まだ顔の見えないものがある。王女は闇に耳を澄ませた。'],
     ['命を削って借りる', '「悪魔の帳簿」から「命を削って借りる」を開き、−1で2に調整して借りてみましょう。借りは3増え、命は2夜縮みます。一度でも借りると、魂の総量が借りの40%を下回った時に敗北します。借りずに進んでも構いません。', '「足りなければ、貸してやろう。代わりに、お前の残りの夜を少し」'],
     ['チュートリアル完了', '本編は気配5枚・使い魔3体まで。基本の卵は4種類、第5夜から珍しい卵が加わります。練習の魂や経過した夜は本編に持ち越しません。', '王女はマントを握り直した。闇の向こうに、帝国の灯りが続いている。']
   ];
@@ -1267,7 +1267,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       <h3>魂の欠片と代価</h3>
       <ul><li>回収は一部でも全部でも可能。受け取りは5%目減りする。全部回収するとその使い魔は消え、枠が空く。使い魔は3体まで。</li>
       <li>破滅の代価は毎夜およそ3%ずつ上がる（±5%のぶれ）。騎士団の札や、宴の札（建国祭・戦勝の祝宴）が起きた夜は2割下がる。</li>
-      <li>偵察：欠片${E.P.scoutCost}で伏せ札を1枚表にできる。</li></ul></div>`;
+      <li>偵察：欠片${E.P.scoutCost}で情報統制された気配を1枚公開できる。</li></ul></div>`;
   }
   function openPanel(name) { if (name === 'howto') { startTutorial(true); return; } const [t, h] = PANELS[name](); panel(t, h); }
 
@@ -1411,7 +1411,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     lastNight = { key: d.key, eff, changes };
     const extra = r.events.slice(1).filter(e => !before.some(b => e.text.startsWith(E.SPECIES[b.sp].name) && e.kind === 'bad'));
     layer.innerHTML = `<div class="scrim center"><div class="night-card" role="dialog" aria-modal="true">
-      <div class="from">第${S.turn - 1}夜 ${d.wasPublic ? '見えていた札が起きた' : '伏せ札が起きた'}${d.from !== d.key ? `（${esc(E.CARDS[d.from].name)}）` : ''}</div>
+      <div class="from">第${S.turn - 1}夜 ${d.wasPublic ? '見えていた札が起きた' : '情報統制されていた出来事が起きた'}${d.from !== d.key ? `（${esc(E.CARDS[d.from].name)}）` : ''}</div>
       <div class="drawn">${esc(E.CARDS[d.key].name)}</div>
       ${art(d.key)}
       ${!tutorial && FLAVOR[d.key] ? `<div class="flavor">${FLAVOR[d.key]}</div>` : ''}

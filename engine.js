@@ -335,7 +335,7 @@
     if (c.public) return err('すでに見えています');
     if (s.shards < P.scoutCost) return err('欠片が足りません');
     s.shards -= P.scoutCost; c.public = true; c.scouted = true;
-    s.log.push({ t: s.turn, kind: 'act', text: `偵察で伏せ札を覗いた：${CARDS[c.key].name}` });
+    s.log.push({ t: s.turn, kind: 'act', text: `偵察で情報統制の内側を探った：${CARDS[c.key].name}` });
     return { ok: true };
   }
 
@@ -349,7 +349,7 @@
     const c0 = CARDS[key];
     if (c0.split) key = c0.split[s.rng() < .5 ? 0 : 1];
     s.lastDraw = { from: drawn.key, key, wasPublic: drawn.public, idx };
-    ev.push({ kind: isExo(key) ? 'bad' : 'card', text: `${drawn.public ? '' : '伏せ札が開いた：'}${CARDS[drawn.key].name}${key !== drawn.key ? ` → ${CARDS[key].name}` : ''}` });
+    ev.push({ kind: isExo(key) ? 'bad' : 'card', text: `${drawn.public ? '' : '情報統制されていた出来事：'}${CARDS[drawn.key].name}${key !== drawn.key ? ` → ${CARDS[key].name}` : ''}` });
 
     // 使い魔の変動
     for (const f of [...s.fams]) {
