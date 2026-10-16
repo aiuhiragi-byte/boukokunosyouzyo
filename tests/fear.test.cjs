@@ -91,3 +91,35 @@ test('HTML contains exactly the same engine as the simulation and tests',()=>{
   const html=fs.readFileSync(require.resolve('../bokoku-no-oujo.html'),'utf8');
   assert.equal(html.match(/<script>([\s\S]*?)<\/script>/)[1].trim(),fs.readFileSync(require.resolve('../engine.js'),'utf8').trim());
 });
+
+test('low fear can accelerate downward with accurate forecasts and no announcement',()=>{
+  for(const roll of [0,.999]) {
+    const s=state('peace',roll);s.fear.war=50;
+    const f=hatch(s,'crow'),before=f.value,options=E.effectScenarios('peace',s);
+    assert.equal(options.length,2);near(options[1].p,.12);
+    const chosen=options[roll===0?0:1];
+    const result=E.endTurn(s);
+    near(s.fear.war,50*(1+chosen.fx.war));
+    near(f.value,Math.round(before*(1+E.changeOn('peace','crow',1,null,chosen.fx))*10)/10);
+    assert.ok(!result.events?.some(e=>e.kind==='surge'));
+    assert.equal(E.surgeActive(s,'war',false),roll!==0);
+  }
+});
+
+test('downward acceleration expires after three nights and does not block upward cards',()=>{
+  const s=state('peace',.999);s.fear.war=50;E.endTurn(s);
+  assert.equal(s.fallUntil.war,3);near(E.surgeChance(s,'war',-1),0);
+  near(E.sectorEffects('peace',s.turn,s).war,-.3*E.lateMult(s.turn)*1.35);
+  near(E.sectorEffects('march',s.turn,s).war,.5*E.lateMult(s.turn)*E.pressureFactor(s.fear.war,true));
+  s.field=[{key:'march',public:true}];const before=s.fear.war;E.endTurn(s);assert.ok(s.fear.war>before);
+  s.field=[{key:'march',public:true}];E.endTurn(s);assert.equal(E.surgeActive(s,'war',false),false);
+  s.fear.war=50;near(E.surgeChance(s,'war',-1),.12);
+  s.fear.war=100;near(E.surgeChance(s,'war',-1),0);
+});
+
+test('player UI does not name or mark internal acceleration states',()=>{
+  const html=fs.readFileSync(require.resolve('../bokoku-no-oujo.html'),'utf8');
+  assert.ok(!html.includes('奔流'));
+  assert.ok(!html.includes('surgeNote'));
+  assert.ok(!html.includes('<sup>※</sup>'));
+});

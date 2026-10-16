@@ -124,6 +124,7 @@
     pressureStrength: .4,
     pressureFloor: .35,
     surgeThreshold: 160,
+    fallThreshold: 62.5,
     surgeChance: .12,
     surgeMult: 1.35,
     surgeNights: 3
@@ -149,16 +150,17 @@
     const up = Math.max(P.pressureFloor, Math.min(2 - P.pressureFloor, 2 / (1 + Math.pow(ratio, P.pressureStrength))));
     return rising ? up : 2 - up;
   }
-  function surgeActive(s, sector) { return !!s && (s.surgeUntil[sector] || 0) >= s.turn; }
+  function surgeActive(s, sector, rising = true) { return !!s && ((rising ? s.surgeUntil : s.fallUntil)?.[sector] || 0) >= s.turn; }
   function surgeChance(s, sector, change) {
-    return s && change > 0 && s.fear[sector] >= P.surgeThreshold && !surgeActive(s, sector) ? P.surgeChance : 0;
+    const eligible = change > 0 ? s && s.fear[sector] >= P.surgeThreshold : change < 0 && s && s.fear[sector] <= P.fallThreshold;
+    return eligible && !surgeActive(s, sector, change > 0) ? P.surgeChance : 0;
   }
   function sectorEffects(key, turn, s = null, bursts = []) {
     const c = CARDS[key], out = {};
     if (!c.fx) return out;
     for (const [k, raw] of Object.entries(c.fx)) {
       const rising = raw > 0;
-      const pressure = s ? (rising && (surgeActive(s, k) || bursts.includes(k)) ? P.surgeMult : pressureFactor(s.fear[k], rising)) : 1;
+      const pressure = s ? ((surgeActive(s, k, rising) || bursts.includes(k)) ? P.surgeMult : pressureFactor(s.fear[k], rising)) : 1;
       out[k] = Math.max(-.9, raw * (rising ? P.boom : 1) * lateMult(turn) * pressure);
     }
     return out;
@@ -195,6 +197,7 @@
       regime: 'tax', regimeHistory: ['tax'],
       fear: Object.fromEntries(SECTORS.map(k=>[k,P.fearBase])),
       surgeUntil: Object.fromEntries(SECTORS.map(k=>[k,0])),
+      fallUntil: Object.fromEntries(SECTORS.map(k=>[k,0])),
       field: [], eggs: [], fams: [], famSeq: 0,
       ruinPrice: P.ruinStart, ruined: 0, ruinedThisTurn: false,
       log: [], over: false, result: null,
@@ -414,8 +417,8 @@
     s.lastDraw.fearBefore = {...s.fear};
     s.lastDraw.bursts = selected.bursts;
     for(const k of selected.bursts) {
-      s.surgeUntil[k] = s.turn + P.surgeNights - 1;
-      ev.push({kind:'surge',text:`${SECT_JP[k]}の不安が奔流になった。今夜を含む${P.surgeNights}夜、上昇の抑制が外れる`});
+      const timers = selected.fx[k] > 0 ? s.surgeUntil : (s.fallUntil ||= {});
+      timers[k] = s.turn + P.surgeNights - 1;
     }
 
     // 使い魔の変動：全員に同じ、解決済みの不安の変化を適用する。
