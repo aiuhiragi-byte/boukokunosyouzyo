@@ -421,6 +421,13 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
   .soul-mote, .soul-float { display:none; animation:none; }
 }
 
+.fear-level { color:var(--muted); font-variant-numeric:tabular-nums; line-height:1.3; margin-top:4px; }
+.fear-help { font-size:.68rem; padding:4px 8px; margin:5px 0; }
+.fear-list { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.fear-list small { display:block; font-size:.7rem; color:var(--muted); }
+.fear-change { text-align:center; }
+.night-card .ev.surge { color:var(--brass); font-weight:700; }
+.cell sup { font-size:.5rem; }
 </style>
 </head>
 <body>
@@ -518,23 +525,23 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
 
   // 場札（帝国の気配）。値は「その恐怖が何割増えるか」
   const CARDS = {
-    grain:      { name: '麦の値上がり',   fx: { life: .15 } },
-    tax:        { name: '重税の布告',     fx: { life: .2, power: .03 } },
-    sleepless:  { name: '眠れぬ夜',       fx: { war: .04, plague: .04, life: .04, power: .04 } },
+    grain:      { name: '麦の値上がり',   fx: { life: .15, war: -.08, power: -.08 } },
+    tax:        { name: '重税の布告',     fx: { life: .2, plague: -.09, power: -.08 } },
+    sleepless:  { name: '眠れぬ夜',       fx: { war: .02, plague: -.05, life: .02, power: -.08 } },
     omen:       { name: '凶星が昇る',     fx: { war: .06, plague: .06, life: .06, power: .06 } },
     rumor:      { name: '不穏な噂',       split: ['rumorGood', 'patrolLife'] },
-    rumorGood:  { name: '噂が飢えを煽る', fx: { life: .2 }, hiddenInDeck: true },
+    rumorGood:  { name: '噂が飢えを煽る', fx: { life: .2, war: -.05, plague: -.06 }, hiddenInDeck: true },
     harvest:    { name: '豊作の報せ',     fx: { life: -.3 } },
-    march:      { name: '出征の行列',     fx: { war: .25, life: .03 } },
-    conscript:  { name: '徴兵令',         fx: { war: .32, life: -.08 } },
+    march:      { name: '出征の行列',     fx: { war: .25, life: -.04, power: -.10 } },
+    conscript:  { name: '徴兵令',         fx: { war: .32, life: -.08, plague: -.06 } },
     letter:     { name: '前線からの密書', split: ['letterGood', 'letterBad'] },
-    letterGood: { name: '敗走の報せ',     fx: { war: .32 }, hiddenInDeck: true },
+    letterGood: { name: '敗走の報せ',     fx: { war: .32, plague: -.06, power: -.10 }, hiddenInDeck: true },
     letterBad:  { name: '休戦の報せ',     fx: { war: -.3 }, hiddenInDeck: true },
     peace:      { name: '和平の噂',       fx: { war: -.3 } },
-    plague:     { name: '疫病の流行',     fx: { plague: .42, life: -.05 } },
-    quarantine: { name: '隔離令',         fx: { plague: .2, life: -.1 } },
+    plague:     { name: '疫病の流行',     fx: { plague: .42, life: -.09, power: -.14 } },
+    quarantine: { name: '隔離令',         fx: { plague: .2, life: -.1, power: -.10 } },
     healer:     { name: '薬師の到来',     fx: { plague: -.35 } },
-    edict:      { name: '魔女狩りの布告', fx: { power: .25, life: -.05 } },
+    edict:      { name: '魔女狩りの布告', fx: { power: .25, life: -.05, war: -.04 } },
     patrolWar:    { name: '騎士団の巡回（戦）', exo: { target: 'war', e: -.55 } },
     patrolPlague: { name: '騎士団の巡回（疫）', exo: { target: 'plague', e: -.55 } },
     patrolLife:   { name: '騎士団の巡回（飢）', exo: { target: 'life', e: -.55 } },
@@ -597,7 +604,14 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     scoutCost: 2,
     minFeed: 1,
     boom: 2,
-    rareFrom: 5
+    rareFrom: 5,
+    fearBase: 100,
+    pressureStrength: .4,
+    pressureFloor: .35,
+    surgeThreshold: 160,
+    surgeChance: .12,
+    surgeMult: 1.35,
+    surgeNights: 3
   };
 
   function mkRng(seed) {
@@ -614,6 +628,48 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
   const r1 = x => Math.round(x * 10) / 10;
 
   function lateMult(turn) { return 1 + (turn - 1) / 25; }
+  // Fear is shared by the whole empire. Holdings and feeding never reset it.
+  function pressureFactor(level, rising) {
+    const ratio = Math.max(Number.MIN_VALUE, level / P.fearBase);
+    const up = Math.max(P.pressureFloor, Math.min(2 - P.pressureFloor, 2 / (1 + Math.pow(ratio, P.pressureStrength))));
+    return rising ? up : 2 - up;
+  }
+  function surgeActive(s, sector) { return !!s && (s.surgeUntil[sector] || 0) >= s.turn; }
+  function surgeChance(s, sector, change) {
+    return s && change > 0 && s.fear[sector] >= P.surgeThreshold && !surgeActive(s, sector) ? P.surgeChance : 0;
+  }
+  function sectorEffects(key, turn, s = null, bursts = []) {
+    const c = CARDS[key], out = {};
+    if (!c.fx) return out;
+    for (const [k, raw] of Object.entries(c.fx)) {
+      const rising = raw > 0;
+      const pressure = s ? (rising && (surgeActive(s, k) || bursts.includes(k)) ? P.surgeMult : pressureFactor(s.fear[k], rising)) : 1;
+      out[k] = Math.max(-.9, raw * (rising ? P.boom : 1) * lateMult(turn) * pressure);
+    }
+    return out;
+  }
+  // Exact public possibilities. Pure: no random draws or state changes in previews.
+  function effectScenarios(key, s) {
+    return outcomes(key).flatMap(o => {
+      let branches = [{ p:o.p, bursts:[] }];
+      for (const [k,v] of Object.entries(CARDS[o.key].fx || {})) {
+        const chance = surgeChance(s,k,v);
+        if(chance > 0) branches = branches.flatMap(b => [
+          {p:b.p*(1-chance),bursts:b.bursts},
+          {p:b.p*chance,bursts:[...b.bursts,k]}
+        ]).filter(b=>b.p>0);
+      }
+      return branches.map(b=>({...b,key:o.key,fx:sectorEffects(o.key,s.turn,s,b.bursts)}));
+    });
+  }
+  function changeOn(key, sp, turn, s = null, fx = null) {
+    return Math.max(-.95, cardEffectOn(key,sp,turn,s,fx) - (SPECIES[sp].decay || 0));
+  }
+  function effectPreview(key, sp, s) {
+    const options = effectScenarios(key,s).map(o=>({p:o.p,value:changeOn(o.key,sp,s.turn,s,o.fx)}));
+    return { mean:options.reduce((a,o)=>a+o.p*o.value,0), min:Math.min(...options.map(o=>o.value)), max:Math.max(...options.map(o=>o.value)) };
+  }
+
   function publicChance(turn) { return Math.max(.15, .8 - turn * .028); }
 
   function newGame(seed) {
@@ -622,6 +678,8 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       rng, turn: 1, shards: P.startShards, debt: P.startDebt,
       deathTurn: P.deathMin + Math.floor(rng() * (P.deathMax - P.deathMin + 1)),
       regime: 'tax', regimeHistory: ['tax'],
+      fear: Object.fromEntries(SECTORS.map(k=>[k,P.fearBase])),
+      surgeUntil: Object.fromEntries(SECTORS.map(k=>[k,0])),
       field: [], eggs: [], fams: [], famSeq: 0,
       ruinPrice: P.ruinStart, ruined: 0, ruinedThisTurn: false,
       log: [], over: false, result: null,
@@ -646,14 +704,15 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
   }
 
   // 1枚の札（split解決済み）が、ある種族の蓄えを何割動かすか（後半倍率込み）
-  function cardEffectOn(cardKey, spKey, turn) {
+  function cardEffectOn(cardKey, spKey, turn, s = null, resolvedFx = null) {
     const c = CARDS[cardKey], sp = SPECIES[spKey];
     const m = lateMult(turn);
     if (sp.bond) return 0;
     if (c.fx) {
       let ch = 0;
-      for (const k in c.fx) ch += (sp.sens[k] || 0) * c.fx[k] * (c.fx[k] > 0 ? P.boom : 1);
-      return ch * m;
+      const fx = resolvedFx || sectorEffects(cardKey,turn,s);
+      for (const k in fx) ch += (sp.sens[k] || 0) * fx[k];
+      return ch;
     }
     if (c.exo) {
       if (sp.inverse) return -c.exo.e * .4 * m;
@@ -829,12 +888,25 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     s.lastDraw = { from: drawn.key, key, wasPublic: drawn.public, idx };
     ev.push({ kind: isExo(key) ? 'bad' : 'card', text: `${drawn.public ? '' : '情報統制されていた出来事：'}${CARDS[drawn.key].name}${key !== drawn.key ? ` → ${CARDS[key].name}` : ''}` });
 
-    // 使い魔の変動
+    const scenarios = effectScenarios(key,s);
+    let selected = scenarios[0];
+    if(scenarios.length > 1) {
+      let roll = s.rng();
+      selected = scenarios[scenarios.length-1];
+      for(const option of scenarios) { roll -= option.p; if(roll < 0) {selected=option;break;} }
+    }
+    s.lastDraw.fx = selected.fx;
+    s.lastDraw.fearBefore = {...s.fear};
+    s.lastDraw.bursts = selected.bursts;
+    for(const k of selected.bursts) {
+      s.surgeUntil[k] = s.turn + P.surgeNights - 1;
+      ev.push({kind:'surge',text:`${SECT_JP[k]}の不安が奔流になった。今夜を含む${P.surgeNights}夜、上昇の抑制が外れる`});
+    }
+
+    // 使い魔の変動：全員に同じ、解決済みの不安の変化を適用する。
     for (const f of [...s.fams]) {
       const sp = SPECIES[f.sp];
-      let ch = cardEffectOn(key, f.sp, s.turn);
-      if (sp.decay) ch -= sp.decay;
-      ch = Math.max(-.95, ch);
+      const ch = changeOn(key, f.sp, s.turn, s, selected.fx);
       f.value = r1(Math.max(0, f.value * (1 + ch)));
       if (sp.yield && f.value > 0) {
         const y = r1(f.value * sp.yield); s.shards = r1(s.shards + y);
@@ -858,6 +930,10 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
         ev.push({ kind: 'bad', text: `${sp.name}は騎士団に捕捉され、消滅した（注ぎ込んだ欠片${r1(f.invested)}が無に）` });
       }
     }
+
+    // One shared update, even with no familiars. Knights damage familiars, not fear.
+    for(const [k,v] of Object.entries(selected.fx)) s.fear[k] *= 1 + v;
+    s.lastDraw.fearAfter = {...s.fear};
 
     // 破滅の価格
     let drift = 1 + P.ruinDrift + (s.rng() * 2 - 1) * P.ruinNoise;
@@ -913,11 +989,11 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
 
   const API = { SECTORS, SECT_JP, SECT_DESC, SYMPTOMS, SPECIES, SPECIES_KEYS, BASIC_KEYS, RARE_KEYS, CARDS, REGIMES, REGIME_KEYS, STAY, TARGETS, P,
     newGame, hatch, feed, recover, recoverPreview, withdraw, withdrawPreview, maxNet, borrow, ruin, scout, endTurn,
+    pressureFactor, surgeActive, surgeChance, sectorEffects, effectScenarios, changeOn, effectPreview,
     cardEffectOn, outcomes, isExo, nextPayment, nightsToMoon, symptom, netWorth, lateMult, publicChance, mkRng };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.Engine = API;
 })(this);
-
 </script>
 <script>
 (function () {
@@ -973,9 +1049,27 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     if (c.exo) { const t = c.exo.target === 'all' ? '全' : E.SECT_JP[c.exo.target]; return `<span class="chip dn">騎士団 ${t}${pct(c.exo.e * (c.exo.target === 'all' ? .6 : 1))}</span>`; }
     return '';
   }
+  function fearLevel(value) {
+    return value < .1 ? '0.1未満' : value >= 10000 ? fmt(value/10000)+'万' : fmt(value);
+  }
+  function fearInfo() {
+    return `<div class="rules"><p>戦・疫・飢・罰それぞれが100から始まります。民の不安なので、使い魔を孵し直しても戻りません。</p>
+      <p>民の関心が一つの不安へ向かうと、札ごとに別の1〜2種類の不安が和らぐことがあります。</p><p>高いほど上がりにくく、下がりやすい。低いほど下がりにくく、上がりやすい。ただし札にない不安は動かず、上限・下限で自動反転もしません。</p>
+      <div class="fear-list">${E.SECTORS.map(k=>`<div><b class="s-${k}">${SECT_LONG[k]}</b> ${fearLevel(S.fear[k])}<small>通常：上昇 ×${E.pressureFactor(S.fear[k],true).toFixed(2)} ／ 下落 ×${E.pressureFactor(S.fear[k],false).toFixed(2)}</small>${E.surgeActive(S,k)?`<span class="up">奔流 あと${S.surgeUntil[k]-S.turn+1}夜</span>`:''}</div>`).join('')}</div>
+      <p><b>不安の奔流</b>：${E.P.surgeThreshold}以上の不安に上昇する札が当たると、${E.P.surgeChance*100}%で発生。その夜を含む${E.P.surgeNights}夜、上昇は通常の抑制を外して基準効果の${E.P.surgeMult}倍になります。下げる札の効果は残り、上がり続ける保証はありません。</p>
+      <p>気配表は通常時の変化。※は奔流の可能性で、使い魔の見込みはその確率を含む平均です。すでに奔流ならその効果を表示します。騎士団は使い魔への直接攻撃なので、不安の圧力では弱まりません。</p>
+      <details><summary>計算式</summary><p>上昇倍率＝2 ÷（1＋（不安÷100）の${E.P.pressureStrength}乗）。倍率は${E.P.pressureFloor}〜${2-E.P.pressureFloor}に収め、下落倍率＝2−上昇倍率。不安の値自体には固定の上限はなく、1回の下落率だけ最大90%です。使い魔の1回の損失は最大95%。</p></details></div>`;
+  }
+  function surgeNote(key) {
+    const lines=E.outcomes(key).flatMap(o=>Object.entries(E.CARDS[o.key].fx||{}).filter(([k,v])=>v>0 && (E.surgeChance(S,k,v)>0 || E.surgeActive(S,k))).map(([k])=>{
+      const normal=E.sectorEffects(o.key,S.turn,S)[k], burst=E.sectorEffects(o.key,S.turn,S,[k])[k];
+      return E.surgeActive(S,k)?`${E.SECT_JP[k]}は奔流中：${pct(normal)}`:`${E.SECT_JP[k]}：通常${pct(normal)} ／ この出来事が起きた時の${E.P.surgeChance*100}%で奔流${pct(burst)}`;
+    }));
+    return `<p class="sub">現在の不安を反映した変化です。${[...new Set(lines)].join('。')}</p>`;
+  }
   function sectorVals(key, state = S) {
     const c = E.CARDS[key], m = E.lateMult(state.turn), out = {};
-    if (c.fx) for (const k in c.fx) out[k] = { v: c.fx[k] * (c.fx[k] > 0 ? E.P.boom : 1) * m };
+    if (c.fx) for (const [k,v] of Object.entries(E.sectorEffects(key,state.turn,state))) out[k] = { v, surge:E.surgeChance(state,k,c.fx[k]) > 0 };
     if (c.exo) { const ts = c.exo.target === 'all' ? E.SECTORS : [c.exo.target]; for (const k of ts) out[k] = { v: c.exo.e * m * (c.exo.target === 'all' ? .6 : 1), k: true }; }
     return out;
   }
@@ -986,12 +1080,12 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
   function barHTML(o, showPct) {
     if (!o || Math.abs(o.v) < .005) return '<div class="half"><span class="zero"></span></div>';
     const w = Math.min(1, Math.abs(o.v) / BAR_MAX) * 50, pos = o.v >= 0;
-    return `<div class="half"><span class="zero"></span><span class="b ${pos ? 'pos' : 'neg'}" style="left:${pos ? 50 : 50 - w}%;width:${w}%"></span><span class="v ${pos ? 'pos' : 'neg'} ${o.k ? 'k' : ''}">${showPct ? pct(o.v) : arrowLv(o.v)}</span></div>`;
+    return `<div class="half"><span class="zero"></span><span class="b ${pos ? 'pos' : 'neg'}" style="left:${pos ? 50 : 50 - w}%;width:${w}%"></span><span class="v ${pos ? 'pos' : 'neg'} ${o.k ? 'k' : ''}">${showPct ? pct(o.v) : arrowLv(o.v)}${o.surge ? '<sup>※</sup>' : ''}</span></div>`;
   }
   // 札の効果をひとことで（例：飢↑大・罰↑小）
-  function effectText(key) {
-    const c = E.CARDS[key], m = E.lateMult(S.turn);
-    if (c.fx) return Object.keys(c.fx).map(k => { const v = c.fx[k] * (c.fx[k] > 0 ? E.P.boom : 1) * m; return `<span class="s-${k}">${E.SECT_JP[k]}</span><span class="${v >= 0 ? 'up' : 'dn'}">${arrowLv(v)}</span>`; }).join('・');
+  function effectText(key, resolvedFx = null) {
+    const c = E.CARDS[key];
+    if (c.fx) return Object.entries(resolvedFx || E.sectorEffects(key,S.turn,S)).map(([k,v]) => { return `<span class="s-${k}">${E.SECT_JP[k]}</span><span class="${v >= 0 ? 'up' : 'dn'}">${arrowLv(v)}</span>`; }).join('・');
     if (c.exo) return c.exo.target === 'all' ? '<span class="dn">騎士団がすべての使い魔を狩る（中）</span>' : `<span class="dn">騎士団が</span><span class="s-${c.exo.target}">${E.SECT_JP[c.exo.target]}</span><span class="dn">の使い魔を狩る（大）</span>`;
     return '';
   }
@@ -1007,13 +1101,13 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     return `<div class="${rowCls}" data-row="${i}"><div class="om-name ${E.isExo(card.key) ? 'exo' : ''}" data-omen="${i}">${nw}<div class="nm"><span class="ix">${i + 1}</span>${esc(c.name)}</div>${sub}</div>` +
       E.SECTORS.map(k => `<div class="cell" data-omen="${i}">${parts.map(p => barHTML(p[k])).join('')}</div>`).join('') + '</div>';
   }
-  function expected(key, sp) { return E.outcomes(key).reduce((a, o) => a + o.p * E.cardEffectOn(o.key, sp, S.turn), 0); }
+  function expected(key, sp) { return E.effectPreview(key,sp,S).mean; }
   function minis(f, showPct) {
     const sp = E.SPECIES[f.sp];
     if (sp.bond) return `<div class="sub" style="text-align:center">目覚めまで あと${sp.bond.turns - (S.turn - f.born)}夜</div>`;
     return `<div class="minis">${S.field.map((c, i) => {
       if (!c.public) return `<div class="cell"><span class="ixl">${i + 1}</span><div class="half"><span class="v" style="color:var(--hidden)">？</span></div></div>`;
-      return `<div class="cell" data-omen="${i}"><span class="ixl">${i + 1}</span>${barHTML({ v: expected(c.key, f.sp) - (sp.decay || 0) }, showPct)}</div>`;
+      return `<div class="cell" data-omen="${i}"><span class="ixl">${i + 1}</span>${barHTML({ v: expected(c.key, f.sp) }, showPct)}</div>`;
     }).join('')}</div>`;
   }
 
@@ -1062,8 +1156,8 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     if (sp.bond) return `<span class="sub">目覚めまで${sp.bond.turns - (S.turn - f.born)}夜</span>`;
     const pub = S.field.filter(c => c.public), hid = S.field.length - pub.length;
     if (hid >= 4 || !pub.length) return '<span class="sub">見込み 不明</span>';
-    const outs = pub.flatMap(c => E.outcomes(c.key).map(o => E.cardEffectOn(o.key, f.sp, S.turn) - (sp.decay || 0)));
-    const lo = Math.min(...outs), hi = Math.max(...outs), avg = outs.reduce((a, b) => a + b, 0) / outs.length, eps = .02;
+    const previews = pub.map(c => E.effectPreview(c.key,f.sp,S));
+    const lo = Math.min(...previews.map(p=>p.min)), hi = Math.max(...previews.map(p=>p.max)), avg = previews.reduce((a,p)=>a+p.mean,0)/previews.length, eps=.02;
     const q = hid >= 2 ? '？' : '';
     let txt, cls;
     if (lo > -eps && hi > eps) { txt = '↑' + (lvl(avg) || '小'); cls = 'up'; }
@@ -1095,9 +1189,10 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     $('health').innerHTML = `<span class="pips ${hp <= 2 ? 'low' : ''}" aria-label="体力 ${hp}/5">${[0, 1, 2, 3, 4].map(i => `<i class="${i < hp ? 'on' : ''}"></i>`).join('')}</span><span>王女の体調：${sym.text}</span>${marginTxt}`;
 
     const _anim = animateNew; setTimeout(() => { animateNew = false; }, 0);
-    $('omens').innerHTML = '<div class="om-row"><div class="om-corner">民の不安</div>' + E.SECTORS.map(k => `<div class="om-h s-${k}">${E.SECT_JP[k]}<small>${SECT_LONG[k]}</small></div>`).join('') + '</div>' + S.field.map((card, i) => omenRow(card, i)).join('');
+    $('omens').innerHTML = '<div class="om-row"><div class="om-corner">民の不安</div>' + E.SECTORS.map(k => `<div class="om-h s-${k}">${E.SECT_JP[k]}<small>${SECT_LONG[k]}</small>${!tutorial || tutorial.step>=10 ? `<small class="fear-level">${fearLevel(S.fear[k])}<br>${E.surgeActive(S,k)?'奔流':S.fear[k]>=E.P.surgeThreshold?'高まり':S.fear[k]<65?'鎮静':'平常'}</small>` : ''}</div>`).join('') + '</div>' + S.field.map((card, i) => omenRow(card, i)).join('');
     const nPub = S.field.filter(c => c.public).length;
-    $('omenNote').textContent = `公開${nPub}・情報統制${S.field.length - nPub}　札をタップすると%を表示　騎＝騎士団の狩り`;
+    $('omenNote').textContent = `公開${nPub}・情報統制${S.field.length - nPub}　札をタップで詳細　騎＝狩り　※＝奔流の可能性`;
+    if(!tutorial || tutorial.step>=10) $('omenNote').insertAdjacentHTML('beforeend', ' <button class="btn fear-help" data-panel="fear">不安の流れ</button>');
 
     const rows = S.fams.map(f => {
       const sp = E.SPECIES[f.sp], pl = f.value - f.invested;
@@ -1170,13 +1265,13 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     ['卵を開いて、使い魔を選ぶ', '右の「◀ 卵」を開いてください。鴉は戦、蝗は飢えに強く反応します。気配と相性を見比べて卵を選び、＋1で魂を6まで増やして「孵す」を押しましょう。支払いには代価も含まれます。', '悪魔が二つの卵を置いた。殻の奥で、小さな影が街のざわめきに耳を澄ませている。'],
     ['気配と使い魔を見比べる', '気配の「大・小」と、使い魔の相性・見込みを見比べましょう。使い魔をタップすると札ごとの変化も確認できます。準備ができたら、下の「夜を越す」を押してください。', '王女は街の灯りと、足元の小さな影を交互に見つめた。どちらの不安が、今夜の餌になるのだろう。'],
     ['魂を注ぐ', '使い魔をタップし、＋1を3回押して魂を3注ぎましょう。左右の数と矢印が、手元から使い魔への移動を示します。', '「まだ育てるか？」王女の掌で、魂の欠片がかすかに熱を帯びた。'],
-    ['気配が3枚に', '豊作の報せは飢えを鎮め、蝗を痩せさせます。気配と使い魔を確認して「夜を越す」を押しましょう。', '民にとっての救いが、使い魔には飢えになる。王女は明るくなった街を黙って見つめた。'],
+    ['気配が3枚に', '一つの不安が高まる一方、別の不安が少し下がる札もあります。豊作は飢えを鎮め、蝗を痩せさせます。気配と使い魔を確認して「夜を越す」を押しましょう。', '民にとっての救いが、使い魔には飢えになる。王女は明るくなった街を黙って見つめた。'],
     ['魂を手元に戻す', '赤丸の使い魔をタップして「全回収」を選び、左右の数を確認して回収してください。本編でも同じ操作です。一部だけ戻す時は−1・−10で調整できます。回収時は5%が失われます。', '「復讐に使うのは、お前の掌にある魂だ。影に預けたままでは届かぬ」'],
     ['最初の復讐', '右の「◀ 破滅」を開き、標的と代価を確認して「破滅させる」を押しましょう。一夜に一人までです。', '占領地総督の窓には、今夜も明かりがある。王女は震える指を握りしめた。'],
     ['新月に備える', '上の「新月まで」と「次の取立」を確認しましょう。取り立てには手元の魂が必要です。「夜を越す」で進めます。', '月が細くなる。悪魔は何も言わず、王女の掌を見つめている。'],
     ['今夜は新月', '今夜は取り立てです。借りが8%増えた後に支払います。手元が足りないと借りが増え、命が2夜縮みます。「夜を越す」で確かめましょう。', '月のない空に、二つの目だけが浮かんだ。「契約の刻だ」'],
     ['新しい卵', '「◀ 卵」から鼠か影法師を選びましょう。今回は最小の魂1で孵します。鼠は疫、影法師は騎士団の動きに反応します。', '悪魔が新しい卵を置いた。殻の向こうで、別の飢えが息づいている。'],
-    ['情報統制の内側を探る', '気配が本編と同じ5枚になりました。情報統制の「偵察 2」を押して中身を見ましょう。手元の魂を2使います。', '街から届く噂には、まだ顔の見えないものがある。王女は闇に耳を澄ませた。'],
+    ['情報統制の内側を探る', '気配が本編と同じ5枚になりました。不安は高いほど上がりにくく、低いほど下がりにくくなります。まれに「奔流」でさらに高まることもあります。情報統制の「偵察 2」を押して中身を見ましょう。手元の魂を2使います。', '街から届く噂には、まだ顔の見えないものがある。王女は闇に耳を澄ませた。'],
     ['命を削って借りる', '「悪魔の帳簿」から「命を削って借りる」を開き、−1で2に調整して借りてみましょう。借りは3増え、命は2夜縮みます。一度でも借りると、魂の総量が借りの40%を下回った時に敗北します。借りずに進んでも構いません。', '「足りなければ、貸してやろう。代わりに、お前の残りの夜を少し」'],
     ['チュートリアル完了', '本編は気配5枚・使い魔3体まで。基本の卵は4種類、第5夜から珍しい卵が加わります。練習の魂や経過した夜は本編に持ち越しません。', '王女はマントを握り直した。闇の向こうに、帝国の灯りが続いている。']
   ];
@@ -1223,7 +1318,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     document.querySelectorAll('[data-hatch]').forEach(b=>b.disabled=![1,9].includes(step));
     document.querySelectorAll('[data-open-drawer]').forEach(b=>b.disabled=![1,9].includes(step));
     document.querySelectorAll('.drawer-tab').forEach(b=>b.disabled=b.dataset.drawer==='drawer'?![1,9].includes(step):step!==6);
-    document.querySelectorAll('[data-panel]').forEach(b=>b.disabled=!(step===11&&b.dataset.panel==='ledger'));
+    document.querySelectorAll('[data-panel]').forEach(b=>b.disabled=!((step===11&&b.dataset.panel==='ledger') || (step>=10&&b.dataset.panel==='fear')));
   }
   function markTutorialTargets() {
     document.querySelectorAll('.tutorial-target').forEach(el=>el.classList.remove('tutorial-target'));
@@ -1268,6 +1363,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
   }
 
   const PANELS = {
+    fear: () => ['不安の流れ', fearInfo()],
     targets: () => ['復讐の名簿', `<div class="targets">${E.TARGETS.map((t, i) => `<div class="target ${i < S.ruined ? 'done' : ''} ">
       <span class="ix num">${i + 1}</span>${art('target' + i, 'mini')}<div><div class="who">${esc(t.name)}</div><div class="why">${esc(t.title)}</div></div>
       <span class="sub">${i < S.ruined ? '破滅' : ''}</span></div>`).join('')}</div>
@@ -1292,10 +1388,10 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       <li>王女の命は20〜28夜目のどこかで尽きる（非公開）。体力の丸と容体が目安。それまでに5人の標的をすべて破滅させれば勝ち（その時点で勝利）。</li></ul>
       <h3>情勢（非公開）と山札</h3>
       <p>帝国には「重税・遠征・疫病・粛清・繁栄」の情勢があり、今の情勢の山札から補充される。情勢は毎夜${E.STAY * 100}%で続き、変わる時は残り4つに等分で移る。繁栄は帝国が幸福な時期で、民の恐怖が消えるので使い魔はみな痩せる。最初は重税。場の札は情勢が変わる前に入ったものも残る。</p>
-      <div class="tbl"><table><thead><tr><th>札</th>${rg.map(r => `<th>${E.REGIMES[r].name}</th>`).join('')}<th style="text-align:left">効果（序盤）</th></tr></thead><tbody>${deckRows}</tbody></table></div>
+      <div class="tbl"><table><thead><tr><th>札</th>${rg.map(r => `<th>${E.REGIMES[r].name}</th>`).join('')}<th style="text-align:left">基準効果（第1夜・不安100）</th></tr></thead><tbody>${deckRows}</tbody></table></div>
       <p>札の効果は夜が進むほど大きくなる（序盤×1.0 → 25夜目×約2.0）。新しい札が公開で入る確率は序盤80%から終盤15%まで下がる。</p>
-      <h3>使い魔の種族</h3>
-      <p>蓄えの変化 = 札の各恐怖の値 × 種族の感応度 の合計。騎士団の札は、その恐怖を喰う種族に感応度（最大1）に応じて当たる。基本の4種はいつでも孵せる。蛾から下の5種は第5夜から、悪魔が毎夜1つだけ持ってくる。</p>
+      <h3>不安の高まり・鎮静・奔流</h3>${fearInfo()}<h3>使い魔の種族</h3>
+      <p>蓄えの変化 = 圧力・奔流を反映した各不安の変化 × 種族の感応度 の合計。騎士団の札は、その恐怖を喰う種族に感応度（最大1）に応じて当たる。基本の4種はいつでも孵せる。蛾から下の5種は第5夜から、悪魔が毎夜1つだけ持ってくる。</p>
       <div class="tbl"><table><thead><tr><th>種族</th><th style="text-align:left">異名</th>${E.SECTORS.map(x => `<th class="s-${x}">${E.SECT_JP[x]}</th>`).join('')}<th>代価</th><th style="text-align:left">特徴</th></tr></thead><tbody>${sens}</tbody></table></div>
       <h3>魂の欠片と代価</h3>
       <ul><li>回収は一部でも全部でも可能。受け取りは5%目減りする。全部回収するとその使い魔は消え、枠が空く。使い魔は3体まで。</li>
@@ -1314,7 +1410,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     const handCls = (to) => to >= pay ? 'meet' : to < S.shards ? 'lose' : 'plain';
     const R = `手元の<br>魂の欠片<div class="lbl2">次の取立 ${pay}</div>`, L = `${esc(sp.name)}の<br>魂の欠片`;
     sheet({ title: `${spName(f.sp)} <span class="tag">${esc(sp.motif)}</span> <span class="sub num" style="font-family:var(--f-body)">蓄え ${fmt(f.value)}・注いだ魂との差 <span class="${pl >= 0 ? 'up' : 'dn'}">${pl >= 0 ? '+' : '−'}${fmt(Math.abs(pl))}</span></span>`,
-      body: `${art(f.sp)}<p class="sub" style="margin:0">${cdesc(sp.desc)}</p><div class="sub">気配の1〜${S.field.length}が起きた場合（%）</div>${minis(f, true)}`,
+      body: `${art(f.sp)}<p class="sub" style="margin:0">${cdesc(sp.desc)}</p><div class="sub">気配の1〜${S.field.length}が起きた場合（平均%・奔流を含む）</div>${minis(f, true)}`,
       min: -mx, max: canFeed, value: 0, unit: '移動する数',
       quick: [['全回収', () => -mx], ['半回収', () => -Math.floor(mx / 2)], ['0', () => 0], ['全て注ぐ', m => m]],
       ok: v => v > 0 ? `魂の欠片を ${fmt(v)} 注ぎ込む` : v < 0 ? `魂の欠片を ${fmt(-v)} 回収する` : '',
@@ -1389,10 +1485,10 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     const full = S.fams.length >= E.P.slots, poor = S.shards < sp.fee + E.P.minFeed;
     if (full || poor) {
       const reason = full ? '使い魔は3体まで。孵すには、いずれかを全回収して枠を空ける。' : `孵すには魂の欠片が${sp.fee + E.P.minFeed}以上必要（手元 ${fmt(S.shards)}）。`;
-      const pub = S.field.map((c, j) => c.public ? `<span>${j + 1}</span><div class="cell">${barHTML({ v: expected(c.key, k) - (sp.decay || 0) }, true)}</div>` : '').join('');
+      const pub = S.field.map((c, j) => c.public ? `<span>${j + 1}</span><div class="cell">${barHTML({ v: expected(c.key, k) }, true)}</div>` : '').join('');
       panel(`${spName(k)} <span class="tag">${esc(sp.motif)}</span>`, `${art(k)}<p class="sub" style="margin:0">${cdesc(sp.desc)}</p><div class="aff">${affinity(k)}</div>
         <p class="num" style="margin:0">孵す代価 ${sp.fee}（戻らない）</p>
-        ${pub ? `<div class="sub">今見えている気配が起きた場合（%）</div><div class="pct-list">${pub}</div>` : ''}
+        ${pub ? `<div class="sub">今見えている気配が起きた場合（平均%・奔流を含む）</div><div class="pct-list">${pub}</div>` : ''}
         <p class="dn" style="margin:0">${reason}</p>`);
       return;
     }
@@ -1478,7 +1574,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       const ev = r.events.find(e => e.text.startsWith(E.SPECIES[b.sp].name));
       return { ...b, after: null, gone: ev ? ev.text : '使い魔は姿を消した' };
     });
-    S.turn--; const eff = effectText(d.key); S.turn++;
+    const eff = effectText(d.key,d.fx);
     lastNight = { key: d.key, eff, changes };
     const extra = r.events.slice(1).filter(e => !before.some(b => e.text.startsWith(E.SPECIES[b.sp].name) && e.kind === 'bad'));
     layer.innerHTML = `<div class="scrim center"><div class="night-card" role="dialog" aria-modal="true">
@@ -1488,6 +1584,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       ${art(d.key)}
       ${!tutorial && FLAVOR[d.key] ? `<div class="flavor">${FLAVOR[d.key]}</div>` : ''}
       <div style="text-align:center;font-size:1rem">${eff}</div>
+      ${!tutorial || tutorial.step>=10 ? `<div class="sub fear-change">${Object.keys(d.fx || {}).map(k=>`${E.SECT_JP[k]} ${fearLevel(d.fearBefore[k])} → ${fearLevel(d.fearAfter[k])}`).join('　')}</div>` : ''}
       ${r.events.some(e => e.kind === 'moon' || /新月/.test(e.text)) ? `<div class="moonbox big">${moonBoxes(E.P.moonEvery, E.P.moonEvery - 1)}</div>` : ''}
       ${extra.map(e => `<div class="ev ${e.kind}">${esc(e.text)}</div>`).join('')}
       <button class="btn primary" id="ok">${S.over ? '結末へ' : '朝を迎える'}</button></div></div>`;
@@ -1500,9 +1597,9 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     const c = E.CARDS[card.key];
     const outs = c.split ? c.split : [card.key];
     const block = k => { const sv = sectorVals(k); return `${c.split ? `<div class="sub">${esc(E.CARDS[k].name)}（半々）</div>` : ''}<div class="pct-list">${E.SECTORS.map(x => `<span class="s-${x}" style="font-family:var(--f-display);font-weight:700">${E.SECT_JP[x]}</span><div class="cell c-${x}">${barHTML(sv[x], true)}</div>`).join('')}</div>`; };
-    const fams = S.fams.filter(f => !E.SPECIES[f.sp].bond).map(f => `<span>${spName(f.sp)}</span><div class="cell">${barHTML({ v: expected(card.key, f.sp) - (E.SPECIES[f.sp].decay || 0) }, true)}</div>`).join('');
-    panel(`${i + 1}. ${esc(c.name)}`, `${art(card.key)}${!tutorial && FLAVOR[card.key] ? `<p class="flavor">${FLAVOR[card.key]}</p>` : ''}<div>${effectText(card.key)}</div>${outs.map(block).join('')}
-      ${fams ? `<div class="sub">この札が起きた時の使い魔の増減${c.split ? '（期待値）' : ''}</div><div class="pct-list">${fams}</div>` : ''}`);
+    const fams = S.fams.filter(f => !E.SPECIES[f.sp].bond).map(f => {const p=E.effectPreview(card.key,f.sp,S);return `<span>${spName(f.sp)}</span><div>${pct(p.mean)}${p.min!==p.max?`<small class="sub">（${pct(p.min)}〜${pct(p.max)}）</small>`:''}</div>`;}).join('');
+    panel(`${i + 1}. ${esc(c.name)}`, `${art(card.key)}${surgeNote(card.key)}${!tutorial && FLAVOR[card.key] ? `<p class="flavor">${FLAVOR[card.key]}</p>` : ''}<div>${effectText(card.key)}</div>${outs.map(block).join('')}
+      ${fams ? `<div class="sub">この札が起きた時の使い魔の増減（平均・奔流を含む）</div><div class="pct-list">${fams}</div>` : ''}`);
   }
   function showEnd() {
     render();

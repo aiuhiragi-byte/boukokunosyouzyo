@@ -12,24 +12,23 @@ function belief(s) {
   let z = 0; for (const r in b) z += b[r]; for (const r in b) b[r] /= z;
   return b;
 }
-function expCardOn(key, sp, turn) {
-  return E.outcomes(key).reduce((a, o) => a + o.p * E.cardEffectOn(o.key, sp, turn), 0);
+function expCardOn(key, sp, state) {
+  return E.effectPreview(key, sp, state).mean;
 }
-function expHidden(b, sp, turn) {
+function expHidden(b, sp, state) {
   let v = 0;
   for (const r in b) {
     const deck = E.REGIMES[r].deck; let tot = 0; for (const k in deck) tot += deck[k];
-    let e = 0; for (const k in deck) e += deck[k] / tot * expCardOn(k, sp, turn);
+    let e = 0; for (const k in deck) e += deck[k] / tot * expCardOn(k, sp, state);
     v += b[r] * e;
   }
   return v;
 }
 function expNext(s, sp, b) {
   let v = 0;
-  for (const c of s.field) v += c.public ? expCardOn(c.key, sp, s.turn) : expHidden(b, sp, s.turn);
+  for (const c of s.field) v += c.public ? expCardOn(c.key, sp, s) : expHidden(b, sp, s);
   v /= s.field.length;
   const S = E.SPECIES[sp];
-  if (S.decay) v -= S.decay;
   if (S.yield) v += S.yield;
   if (S.bond) v = S.bond.rate / S.bond.turns;
   return v;

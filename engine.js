@@ -40,23 +40,23 @@
 
   // 場札（帝国の気配）。値は「その恐怖が何割増えるか」
   const CARDS = {
-    grain:      { name: '麦の値上がり',   fx: { life: .15 } },
-    tax:        { name: '重税の布告',     fx: { life: .2, power: .03 } },
-    sleepless:  { name: '眠れぬ夜',       fx: { war: .04, plague: .04, life: .04, power: .04 } },
+    grain:      { name: '麦の値上がり',   fx: { life: .15, war: -.08, power: -.08 } },
+    tax:        { name: '重税の布告',     fx: { life: .2, plague: -.09, power: -.08 } },
+    sleepless:  { name: '眠れぬ夜',       fx: { war: .02, plague: -.05, life: .02, power: -.08 } },
     omen:       { name: '凶星が昇る',     fx: { war: .06, plague: .06, life: .06, power: .06 } },
     rumor:      { name: '不穏な噂',       split: ['rumorGood', 'patrolLife'] },
-    rumorGood:  { name: '噂が飢えを煽る', fx: { life: .2 }, hiddenInDeck: true },
+    rumorGood:  { name: '噂が飢えを煽る', fx: { life: .2, war: -.05, plague: -.06 }, hiddenInDeck: true },
     harvest:    { name: '豊作の報せ',     fx: { life: -.3 } },
-    march:      { name: '出征の行列',     fx: { war: .25, life: .03 } },
-    conscript:  { name: '徴兵令',         fx: { war: .32, life: -.08 } },
+    march:      { name: '出征の行列',     fx: { war: .25, life: -.04, power: -.10 } },
+    conscript:  { name: '徴兵令',         fx: { war: .32, life: -.08, plague: -.06 } },
     letter:     { name: '前線からの密書', split: ['letterGood', 'letterBad'] },
-    letterGood: { name: '敗走の報せ',     fx: { war: .32 }, hiddenInDeck: true },
+    letterGood: { name: '敗走の報せ',     fx: { war: .32, plague: -.06, power: -.10 }, hiddenInDeck: true },
     letterBad:  { name: '休戦の報せ',     fx: { war: -.3 }, hiddenInDeck: true },
     peace:      { name: '和平の噂',       fx: { war: -.3 } },
-    plague:     { name: '疫病の流行',     fx: { plague: .42, life: -.05 } },
-    quarantine: { name: '隔離令',         fx: { plague: .2, life: -.1 } },
+    plague:     { name: '疫病の流行',     fx: { plague: .42, life: -.09, power: -.14 } },
+    quarantine: { name: '隔離令',         fx: { plague: .2, life: -.1, power: -.10 } },
     healer:     { name: '薬師の到来',     fx: { plague: -.35 } },
-    edict:      { name: '魔女狩りの布告', fx: { power: .25, life: -.05 } },
+    edict:      { name: '魔女狩りの布告', fx: { power: .25, life: -.05, war: -.04 } },
     patrolWar:    { name: '騎士団の巡回（戦）', exo: { target: 'war', e: -.55 } },
     patrolPlague: { name: '騎士団の巡回（疫）', exo: { target: 'plague', e: -.55 } },
     patrolLife:   { name: '騎士団の巡回（飢）', exo: { target: 'life', e: -.55 } },
@@ -119,7 +119,14 @@
     scoutCost: 2,
     minFeed: 1,
     boom: 2,
-    rareFrom: 5
+    rareFrom: 5,
+    fearBase: 100,
+    pressureStrength: .4,
+    pressureFloor: .35,
+    surgeThreshold: 160,
+    surgeChance: .12,
+    surgeMult: 1.35,
+    surgeNights: 3
   };
 
   function mkRng(seed) {
@@ -136,6 +143,48 @@
   const r1 = x => Math.round(x * 10) / 10;
 
   function lateMult(turn) { return 1 + (turn - 1) / 25; }
+  // Fear is shared by the whole empire. Holdings and feeding never reset it.
+  function pressureFactor(level, rising) {
+    const ratio = Math.max(Number.MIN_VALUE, level / P.fearBase);
+    const up = Math.max(P.pressureFloor, Math.min(2 - P.pressureFloor, 2 / (1 + Math.pow(ratio, P.pressureStrength))));
+    return rising ? up : 2 - up;
+  }
+  function surgeActive(s, sector) { return !!s && (s.surgeUntil[sector] || 0) >= s.turn; }
+  function surgeChance(s, sector, change) {
+    return s && change > 0 && s.fear[sector] >= P.surgeThreshold && !surgeActive(s, sector) ? P.surgeChance : 0;
+  }
+  function sectorEffects(key, turn, s = null, bursts = []) {
+    const c = CARDS[key], out = {};
+    if (!c.fx) return out;
+    for (const [k, raw] of Object.entries(c.fx)) {
+      const rising = raw > 0;
+      const pressure = s ? (rising && (surgeActive(s, k) || bursts.includes(k)) ? P.surgeMult : pressureFactor(s.fear[k], rising)) : 1;
+      out[k] = Math.max(-.9, raw * (rising ? P.boom : 1) * lateMult(turn) * pressure);
+    }
+    return out;
+  }
+  // Exact public possibilities. Pure: no random draws or state changes in previews.
+  function effectScenarios(key, s) {
+    return outcomes(key).flatMap(o => {
+      let branches = [{ p:o.p, bursts:[] }];
+      for (const [k,v] of Object.entries(CARDS[o.key].fx || {})) {
+        const chance = surgeChance(s,k,v);
+        if(chance > 0) branches = branches.flatMap(b => [
+          {p:b.p*(1-chance),bursts:b.bursts},
+          {p:b.p*chance,bursts:[...b.bursts,k]}
+        ]).filter(b=>b.p>0);
+      }
+      return branches.map(b=>({...b,key:o.key,fx:sectorEffects(o.key,s.turn,s,b.bursts)}));
+    });
+  }
+  function changeOn(key, sp, turn, s = null, fx = null) {
+    return Math.max(-.95, cardEffectOn(key,sp,turn,s,fx) - (SPECIES[sp].decay || 0));
+  }
+  function effectPreview(key, sp, s) {
+    const options = effectScenarios(key,s).map(o=>({p:o.p,value:changeOn(o.key,sp,s.turn,s,o.fx)}));
+    return { mean:options.reduce((a,o)=>a+o.p*o.value,0), min:Math.min(...options.map(o=>o.value)), max:Math.max(...options.map(o=>o.value)) };
+  }
+
   function publicChance(turn) { return Math.max(.15, .8 - turn * .028); }
 
   function newGame(seed) {
@@ -144,6 +193,8 @@
       rng, turn: 1, shards: P.startShards, debt: P.startDebt,
       deathTurn: P.deathMin + Math.floor(rng() * (P.deathMax - P.deathMin + 1)),
       regime: 'tax', regimeHistory: ['tax'],
+      fear: Object.fromEntries(SECTORS.map(k=>[k,P.fearBase])),
+      surgeUntil: Object.fromEntries(SECTORS.map(k=>[k,0])),
       field: [], eggs: [], fams: [], famSeq: 0,
       ruinPrice: P.ruinStart, ruined: 0, ruinedThisTurn: false,
       log: [], over: false, result: null,
@@ -168,14 +219,15 @@
   }
 
   // 1枚の札（split解決済み）が、ある種族の蓄えを何割動かすか（後半倍率込み）
-  function cardEffectOn(cardKey, spKey, turn) {
+  function cardEffectOn(cardKey, spKey, turn, s = null, resolvedFx = null) {
     const c = CARDS[cardKey], sp = SPECIES[spKey];
     const m = lateMult(turn);
     if (sp.bond) return 0;
     if (c.fx) {
       let ch = 0;
-      for (const k in c.fx) ch += (sp.sens[k] || 0) * c.fx[k] * (c.fx[k] > 0 ? P.boom : 1);
-      return ch * m;
+      const fx = resolvedFx || sectorEffects(cardKey,turn,s);
+      for (const k in fx) ch += (sp.sens[k] || 0) * fx[k];
+      return ch;
     }
     if (c.exo) {
       if (sp.inverse) return -c.exo.e * .4 * m;
@@ -351,12 +403,25 @@
     s.lastDraw = { from: drawn.key, key, wasPublic: drawn.public, idx };
     ev.push({ kind: isExo(key) ? 'bad' : 'card', text: `${drawn.public ? '' : '情報統制されていた出来事：'}${CARDS[drawn.key].name}${key !== drawn.key ? ` → ${CARDS[key].name}` : ''}` });
 
-    // 使い魔の変動
+    const scenarios = effectScenarios(key,s);
+    let selected = scenarios[0];
+    if(scenarios.length > 1) {
+      let roll = s.rng();
+      selected = scenarios[scenarios.length-1];
+      for(const option of scenarios) { roll -= option.p; if(roll < 0) {selected=option;break;} }
+    }
+    s.lastDraw.fx = selected.fx;
+    s.lastDraw.fearBefore = {...s.fear};
+    s.lastDraw.bursts = selected.bursts;
+    for(const k of selected.bursts) {
+      s.surgeUntil[k] = s.turn + P.surgeNights - 1;
+      ev.push({kind:'surge',text:`${SECT_JP[k]}の不安が奔流になった。今夜を含む${P.surgeNights}夜、上昇の抑制が外れる`});
+    }
+
+    // 使い魔の変動：全員に同じ、解決済みの不安の変化を適用する。
     for (const f of [...s.fams]) {
       const sp = SPECIES[f.sp];
-      let ch = cardEffectOn(key, f.sp, s.turn);
-      if (sp.decay) ch -= sp.decay;
-      ch = Math.max(-.95, ch);
+      const ch = changeOn(key, f.sp, s.turn, s, selected.fx);
       f.value = r1(Math.max(0, f.value * (1 + ch)));
       if (sp.yield && f.value > 0) {
         const y = r1(f.value * sp.yield); s.shards = r1(s.shards + y);
@@ -380,6 +445,10 @@
         ev.push({ kind: 'bad', text: `${sp.name}は騎士団に捕捉され、消滅した（注ぎ込んだ欠片${r1(f.invested)}が無に）` });
       }
     }
+
+    // One shared update, even with no familiars. Knights damage familiars, not fear.
+    for(const [k,v] of Object.entries(selected.fx)) s.fear[k] *= 1 + v;
+    s.lastDraw.fearAfter = {...s.fear};
 
     // 破滅の価格
     let drift = 1 + P.ruinDrift + (s.rng() * 2 - 1) * P.ruinNoise;
@@ -435,6 +504,7 @@
 
   const API = { SECTORS, SECT_JP, SECT_DESC, SYMPTOMS, SPECIES, SPECIES_KEYS, BASIC_KEYS, RARE_KEYS, CARDS, REGIMES, REGIME_KEYS, STAY, TARGETS, P,
     newGame, hatch, feed, recover, recoverPreview, withdraw, withdrawPreview, maxNet, borrow, ruin, scout, endTurn,
+    pressureFactor, surgeActive, surgeChance, sectorEffects, effectScenarios, changeOn, effectPreview,
     cardEffectOn, outcomes, isExo, nextPayment, nightsToMoon, symptom, netWorth, lateMult, publicChance, mkRng };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.Engine = API;
