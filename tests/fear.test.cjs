@@ -123,3 +123,11 @@ test('player UI does not name or mark internal acceleration states',()=>{
   assert.ok(!html.includes('surgeNote'));
   assert.ok(!html.includes('<sup>※</sup>'));
 });
+
+test('break-even chance reads only public cards and only for familiars below what was invested',()=>{
+  const s=state('march');s.field=[{key:'march',public:true},{key:'peace',public:true},{key:'plague',public:false}];
+  const f=hatch(s,'crow');assert.equal(E.breakEvenChance(s,f),null);
+  f.value=f.invested-1;
+  const b=E.breakEvenChance(s,f);
+  near(b.p,1/3);assert.equal(b.hidden,1);assert.equal(b.gap,1);
+});

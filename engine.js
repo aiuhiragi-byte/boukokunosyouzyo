@@ -187,6 +187,20 @@
     return { mean:options.reduce((a,o)=>a+o.p*o.value,0), min:Math.min(...options.map(o=>o.value)), max:Math.max(...options.map(o=>o.value)) };
   }
 
+  // 今の公開札だけで、次の夜に注いだ魂まで戻る確率（含み損のときの参照点＝注いだ魂）
+  function breakEvenChance(s, f) {
+    const sp = SPECIES[f.sp];
+    if (sp.bond || f.value >= f.invested || !s.field.length) return null;
+    let p = 0;
+    for (const c of s.field) {
+      if (!c.public) continue;
+      for (const o of effectScenarios(c.key, s)) {
+        if (f.value * (1 + changeOn(o.key, f.sp, s.turn, s, o.fx)) >= f.invested) p += o.p / s.field.length;
+      }
+    }
+    return { p, gap: r1(f.invested - f.value), hidden: s.field.filter(c => !c.public).length };
+  }
+
   function publicChance(turn) { return Math.max(.15, .8 - turn * .028); }
 
   function newGame(seed) {
@@ -507,7 +521,7 @@
 
   const API = { SECTORS, SECT_JP, SECT_DESC, SYMPTOMS, SPECIES, SPECIES_KEYS, BASIC_KEYS, RARE_KEYS, CARDS, REGIMES, REGIME_KEYS, STAY, TARGETS, P,
     newGame, hatch, feed, recover, recoverPreview, withdraw, withdrawPreview, maxNet, borrow, ruin, scout, endTurn,
-    pressureFactor, surgeActive, surgeChance, sectorEffects, effectScenarios, changeOn, effectPreview,
+    pressureFactor, surgeActive, surgeChance, sectorEffects, effectScenarios, changeOn, effectPreview, breakEvenChance,
     cardEffectOn, outcomes, isExo, nextPayment, nightsToMoon, symptom, netWorth, lateMult, publicChance, mkRng };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.Engine = API;

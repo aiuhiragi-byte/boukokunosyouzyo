@@ -120,6 +120,9 @@ button:disabled { opacity: .4; cursor: not-allowed; }
 .famrow.empty { display: block; width: 100%; cursor: pointer; border-style: dashed; color: var(--muted); font-size: .76rem; text-align: center; padding: 8px; cursor: default; }
 .famrow.danger { border-color: #7a3039; }
 .famrow .nm { font-family: var(--f-display); font-weight: 800; font-size: .98rem; line-height: 1.15; }
+.famrow .meta.hold { color: var(--brass); }
+.famrow .meta.hold b { font-weight: 700; margin-left: 2px; }
+.note.hold { color: var(--brass); }
 .famrow .meta { font-size: .6rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .famrow .val { text-align: right; line-height: 1.15; }
 .famaff { justify-content: center; flex-direction: column; align-items: center; gap: 0 !important; font-size: .7rem; }
@@ -672,6 +675,20 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     return { mean:options.reduce((a,o)=>a+o.p*o.value,0), min:Math.min(...options.map(o=>o.value)), max:Math.max(...options.map(o=>o.value)) };
   }
 
+  // 今の公開札だけで、次の夜に注いだ魂まで戻る確率（含み損のときの参照点＝注いだ魂）
+  function breakEvenChance(s, f) {
+    const sp = SPECIES[f.sp];
+    if (sp.bond || f.value >= f.invested || !s.field.length) return null;
+    let p = 0;
+    for (const c of s.field) {
+      if (!c.public) continue;
+      for (const o of effectScenarios(c.key, s)) {
+        if (f.value * (1 + changeOn(o.key, f.sp, s.turn, s, o.fx)) >= f.invested) p += o.p / s.field.length;
+      }
+    }
+    return { p, gap: r1(f.invested - f.value), hidden: s.field.filter(c => !c.public).length };
+  }
+
   function publicChance(turn) { return Math.max(.15, .8 - turn * .028); }
 
   function newGame(seed) {
@@ -992,7 +1009,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
 
   const API = { SECTORS, SECT_JP, SECT_DESC, SYMPTOMS, SPECIES, SPECIES_KEYS, BASIC_KEYS, RARE_KEYS, CARDS, REGIMES, REGIME_KEYS, STAY, TARGETS, P,
     newGame, hatch, feed, recover, recoverPreview, withdraw, withdrawPreview, maxNet, borrow, ruin, scout, endTurn,
-    pressureFactor, surgeActive, surgeChance, sectorEffects, effectScenarios, changeOn, effectPreview,
+    pressureFactor, surgeActive, surgeChance, sectorEffects, effectScenarios, changeOn, effectPreview, breakEvenChance,
     cardEffectOn, outcomes, isExo, nextPayment, nightsToMoon, symptom, netWorth, lateMult, publicChance, mkRng };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else root.Engine = API;
@@ -1146,6 +1163,11 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
     const N = E.P.moonEvery, pos = n != null ? n : (S.turn - 1) % N, fr = fresh != null ? fresh : pos - 1;
     return Array.from({ length: N }, (_, i) => `<i class="${i < pos ? 'done' : ''} ${i === N - 1 ? 'moon' : ''}">${i < pos ? `<svg viewBox="0 0 12 12" aria-hidden="true"><path class="${i === fr ? 'fresh' : ''}" d="M2.2 6.4 L4.9 9 L9.8 3"/></svg>` : ''}</i>`).join('');
   }
+  // 含み損の使い魔：まだ損失は確定していない。参照点（注いだ魂）までの距離と、戻る可能性を見せる
+  function holdHint(f) {
+    const b = E.breakEvenChance(S, f); if (!b) return '';
+    return `<div class="meta hold num">あと+${fmt(b.gap)}で元に${b.p > 0 ? `<b>${Math.round(b.p * 100)}%${b.hidden ? '〜' : ''}</b>` : ''}</div>`;
+  }
   // 公開札だけで見た次の夜の見込み
   function outlook(f) {
     const sp = E.SPECIES[f.sp];
@@ -1195,7 +1217,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       const prev = f.history.length > 1 ? f.history[f.history.length - 2] : null, dv = prev == null ? null : f.value - prev;
       const danger = f.value < f.invested * .55;
       return `<button class="famrow ${danger ? 'danger' : ''}" data-fam="${f.id}">
-        <div class="fam-identity">${art(f.sp, 'mini')}<div><div class="nm">${spName(f.sp)}</div><div class="meta num">増減<span class="${pl >= 0 ? 'up' : 'dn'}">${pl >= 0 ? '+' : '−'}${fmt(Math.abs(pl))}</span></div></div></div>
+        <div class="fam-identity">${art(f.sp, 'mini')}<div><div class="nm">${spName(f.sp)}</div><div class="meta num">${pl >= 0 ? `増減<span class="up">+${fmt(pl)}</span>` : `含み損<span class="dn">−${fmt(-pl)}</span>`}</div>${holdHint(f)}</div></div>
         <div class="aff famaff">${affinity(f.sp)}</div>
         <div class="val num"><b>${fmt(f.value)}</b>${dv == null ? '<span class="sub">孵化</span>' : `<span class="${dv >= 0 ? 'up' : 'dn'}">昨夜${dv >= 0 ? '+' : '−'}${fmt(Math.abs(dv))}</span>`}</div>
         <div class="famside"><div class="outlook">${outlook(f)}</div></div></button>`;
@@ -1409,7 +1431,7 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
       body: `${art(f.sp)}<p class="sub" style="margin:0">${cdesc(sp.desc)}</p><div class="sub">気配の1〜${S.field.length}が起きた場合（平均%）</div>${minis(f, true)}`,
       min: -mx, max: canFeed, value: 0, unit: '移動する数',
       quick: [['全回収', () => -mx], ['半回収', () => -Math.floor(mx / 2)], ['0', () => 0], ['全て注ぐ', m => m]],
-      ok: v => v > 0 ? `魂の欠片を ${fmt(v)} 注ぎ込む` : v < 0 ? `魂の欠片を ${fmt(-v)} 回収する` : '',
+      ok: v => v > 0 ? `魂の欠片を ${fmt(v)} 注ぎ込む` : v < 0 ? `魂の欠片を ${fmt(-v)} 回収する${E.withdrawPreview(S, id, -v)?.realized < 0 ? '（損失を確定）' : ''}` : '',
       danger: v => v < 0,
       feedFill: v => v > 0,
       big: v => {
@@ -1419,10 +1441,14 @@ button:focus-visible { outline:2px solid var(--brass); outline-offset:4px; }
         const loss = p.realized < 0;
         return xferHTML({ lLbl: R, lCur: S.shards, lTo: S.shards + p.get, lCls: handCls(S.shards + p.get), rLbl: L, rCur: f.value, rTo: p.left, dir: 'left', amt: p.get, color: 'var(--gain)',
           note: `${esc(sp.name)}は<br>${fmt(p.cost)}減る<br>（目減り${Math.round(p.fee * 100)}%）`,
-          extra: `${p.all ? `<div class="note">${esc(sp.name)}は消え、枠が空く</div>` : ''}<div class="note">回収分の増減（注いだ魂との差） <span class="${loss ? 'dn' : 'up'}" style="font-weight:700">${p.realized >= 0 ? '+' : '−'}${fmt(Math.abs(p.realized))}</span>${loss ? '　<span class="dn">失った魂は、二度と取り戻せない。</span>' : ''}</div>` });
+          extra: `${p.all ? `<div class="note">${esc(sp.name)}は消え、枠が空く</div>` : ''}<div class="note">${loss ? '確定する損失' : '回収分の増減（注いだ魂との差）'} <span class="${loss ? 'dn' : 'up'}" style="font-weight:700">${p.realized >= 0 ? '+' : '−'}${fmt(Math.abs(p.realized))}</span>${loss ? '　<span class="dn">含み損が確定し、二度と取り戻せない。</span>' : ''}</div>${loss ? holdNote(f) : ''}` });
       },
       preview: v => v < 0 ? (sp.bond ? '蛇は目覚める前に起こすと2割減る' : '') : v > 0 ? '注いだ分だけ、育つ時も痩せる時も振れ幅が大きくなる' : (sp.bond ? '眠っている蛇には注ぎ込めない。回収はできる' : ''),
       run: v => v > 0 ? E.feed(S, id, v) : E.withdraw(S, id, -v) });
+  }
+  function holdNote(f) {
+    const b = E.breakEvenChance(S, f);
+    return b && b.p > 0 ? `<div class="note hold">持ち続ければ、公開された気配だけでも次の夜に<b>${Math.round(b.p * 100)}%</b>${b.hidden ? '以上' : ''}で元に戻る。</div>` : '';
   }
   function spark(hist, invested) {
     const w = 200, h = 44, pad = 3, vals = hist.length > 1 ? hist : [hist[0], hist[0]];
